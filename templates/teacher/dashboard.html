@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AegisQuiz | Teacher Dashboard</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+      :root {
+        --primary-dark: #1a1a2e;
+        --accent-blue: #3f51b5;
+      }
+      body {
+        background-color: #f8f9fa;
+      }
+      .navbar {
+        background-color: var(--primary-dark);
+      }
+      .card {
+        border: none;
+        border-radius: 12px;
+        transition: transform 0.2s;
+      }
+      .card:hover {
+        transform: translateY(-5px);
+      }
+      .btn-primary {
+        background-color: var(--accent-blue);
+        border: none;
+      }
+      .user-icon {
+        vertical-align: middle;
+        margin-right: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="navbar navbar-dark shadow-sm">
+      <div class="container">
+        <a class="navbar-brand d-flex align-items-center" href="#">
+          <span style="font-size: 1.5rem; margin-right: 10px">🛡️</span>
+          <strong>AegisQuiz</strong>
+        </a>
+        <div class="navbar-text d-flex align-items-center text-white">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="22"
+            height="22"
+            fill="currentColor"
+            class="bi bi-person-circle user-icon"
+            viewBox="0 0 16 16"
+          >
+            <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" />
+            <path
+              fill-rule="evenodd"
+              d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1z"
+            />
+          </svg>
+          <span class="me-3"
+            >Welcome, <strong>{{ session['teacher_name'] }}</strong></span
+          >
+          <a href="/logout" class="btn btn-sm btn-outline-danger">Logout</a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container mt-5">
+      <div class="row g-4">
+        <div class="col-md-6">
+          <div class="card shadow-sm h-100 p-3">
+            <div class="card-body text-center d-flex flex-column">
+              <h3 class="card-title fw-bold">Magic AI Builder</h3>
+              <p class="text-muted">
+                Generate a complete, secure quiz in seconds using Gemini AI.
+              </p>
+              <div class="mt-auto text-start">
+                <div class="mb-3">
+                  <label class="form-label fw-semibold">Topic</label>
+                  <input
+                    type="text"
+                    id="ai-topic"
+                    class="form-control"
+                    placeholder="e.g. Quantum Physics"
+                  />
+                </div>
+                <div class="mb-3">
+                  <label class="form-label fw-semibold"
+                    >Number of Questions</label
+                  >
+                  <input
+                    type="number"
+                    id="ai-count"
+                    class="form-control"
+                    value="5"
+                    min="1"
+                    max="20"
+                  />
+                </div>
+                <button
+                  id="ai-btn"
+                  onclick="generateAIQuiz()"
+                  class="btn btn-primary w-100 py-2"
+                >
+                  ✨ Generate with AI
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="card shadow-sm h-100 p-3">
+            <div class="card-body text-center d-flex flex-column">
+              <h3 class="card-title fw-bold">Manual Builder</h3>
+              <p class="text-muted">
+                Hand-craft your own questions for 100% curriculum control.
+              </p>
+              <div class="mt-auto">
+                <p class="py-4 text-secondary">
+                  Set custom distractors, upload images, and verify every answer
+                  personally.
+                </p>
+                <a
+                  href="/teacher/create-manual"
+                  class="btn btn-primary w-100 py-2"
+                  >📝 Create Manually</a
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row mt-5 mb-5">
+        <div class="col-12">
+          <div class="card shadow-sm">
+            <div class="card-header bg-white py-3">
+              <h5 class="mb-0 fw-bold text-dark">Your Published Quizzes</h5>
+            </div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table align-middle">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Quiz Name</th>
+                      <th>Access Code</th>
+                      <th>Status</th>
+                      <th class="text-center">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="quiz-list">
+                    {% if quizzes %} {% for quiz in quizzes %}
+                    <tr>
+                      <td>{{ quiz.title }}</td>
+                      <td>
+                        <code class="fw-bold text-primary"
+                          >{{ quiz.access_code }}</code
+                        >
+                      </td>
+                      <td>
+                        <span class="badge bg-secondary"
+                          >{{ quiz.student_count }} Students</span
+                        >
+                      </td>
+
+                      <td class="text-center">
+                        <button
+                          onclick="startExam('{{ quiz.id }}')"
+                          class="btn btn-success btn-sm"
+                        >
+                          🚀 Start
+                        </button>
+                        <a
+                          href="/teacher/monitor/{{ quiz.id }}"
+                          class="btn btn-info btn-sm text-white"
+                          >📊 Monitor</a
+                        >
+                      </td>
+                    </tr>
+                    {% endfor %} {% else %}
+                    <tr>
+                      <td colspan="4" class="text-center text-muted py-4">
+                        No quizzes generated yet. Try the Magic AI Builder!
+                      </td>
+                    </tr>
+                    {% endif %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const socket = io();
+
+      async function generateAIQuiz() {
+        const topic = document.getElementById("ai-topic").value;
+        const count = document.getElementById("ai-count").value;
+        const btn = document.getElementById("ai-btn");
+
+        if (!topic) return alert("Please enter a topic!");
+
+        btn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> Generating...`;
+        btn.disabled = true;
+
+        try {
+          const response = await fetch("/api/generate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ topic: topic, num_questions: count }),
+          });
+
+          const result = await response.json();
+
+          if (response.ok && result.status === "success") {
+            alert("Success! Quiz generated.");
+            location.reload();
+          } else {
+            // This will now show the ACTUAL error from Python
+            alert(
+              "Server Error: " + (result.message || "Unknown Server Error")
+            );
+          }
+        } catch (err) {
+          alert("Connection Failed: Check if your Python terminal is running.");
+        } finally {
+          btn.innerHTML = "✨ Generate with AI";
+          btn.disabled = false;
+        }
+      }
+
+      function startExam(quizId) {
+        // This emits to app.py, which tells all students in the room to go to /exam
+        socket.emit("teacher_start_exam", { quiz_id: quizId });
+        alert(
+          "Exam started! Students are now entering the secure environment."
+        );
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Aegis Security | Exam Report</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg-deep: #0f172a;
+        --card-bg: #1e293b;
+        --accent-blue: #3b82f6;
+        --success-green: #10b981;
+        --danger-red: #ef4444;
+      }
+
+      body {
+        background-color: var(--bg-deep);
+        color: #f8fafc;
+        font-family: "Inter", sans-serif;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+      }
+
+      .result-card {
+        background-color: var(--card-bg);
+        border: 1px solid #334155;
+        border-radius: 20px;
+        padding: 40px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      }
+
+      .score-display {
+        font-size: 4rem;
+        font-weight: 800;
+        color: white;
+        text-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+      }
+
+      .stat-box {
+        background: rgba(15, 23, 42, 0.5);
+        border: 1px solid #334155;
+        border-radius: 12px;
+        padding: 20px;
+      }
+
+      .review-scroll {
+        max-height: 450px;
+        overflow-y: auto;
+        padding-right: 15px;
+        text-align: left;
+      }
+
+      /* Custom Scrollbar */
+      .review-scroll::-webkit-scrollbar {
+        width: 6px;
+      }
+      .review-scroll::-webkit-scrollbar-track {
+        background: #0f172a;
+      }
+      .review-scroll::-webkit-scrollbar-thumb {
+        background: #334155;
+        border-radius: 10px;
+      }
+
+      .question-item {
+        background: #111827;
+        border-left: 4px solid #334155;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 15px;
+      }
+
+      .correct-border {
+        border-left-color: var(--success-green);
+      }
+      .wrong-border {
+        border-left-color: var(--danger-red);
+      }
+
+      .option-pill {
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        margin-bottom: 5px;
+        background: #1f2937;
+        border: 1px solid #374151;
+        color: white;
+      }
+
+      .student-choice-correct {
+        background: #064e3b !important;
+        border-color: var(--success-green) !important;
+        color: white;
+      }
+      .student-choice-wrong {
+        background: #7f1d1d !important;
+        border-color: var(--danger-red) !important;
+        color: white;
+      }
+      .actual-correct {
+        border: 1px dashed var(--success-green);
+        color: var(--success-green);
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container py-5">
+      <div class="row justify-content-center">
+        <div class="col-lg-8">
+          <div class="card result-card text-center">
+            <h2 class="fw-bold mb-1 text-white">Performance Report</h2>
+            <p class="text-white mb-4">Exam Session Secured by Aegis Pro</p>
+
+            <div class="score-display mb-2">{{ score }}%</div>
+            <p class="lead mb-4 text-white">
+              Total Score for {{ session['student_name'] }}
+            </p>
+
+            <div class="row g-3 mb-5">
+              <div class="col-6">
+                <div class="stat-box">
+                  <small class="text-uppercase text-white fw-bold"
+                    >Security Status</small
+                  >
+                  <h4
+                    class="mb-0 {% if violations > 0 %}text-danger{% else %}text-success{% endif %}"
+                  >
+                    {{ violations }} Violations
+                  </h4>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="stat-box">
+                  <small class="text-uppercase text-white fw-bold"
+                    >Submission</small
+                  >
+                  <h4 class="mb-0 text-info">Verified</h4>
+                </div>
+              </div>
+            </div>
+
+            <hr class="border-white my-5" />
+
+            <h4 class="text-start fw-bold mb-4 text-white">Question Review</h4>
+            <div class="review-scroll">
+              {% for q in questions %} {% set resp =
+              response_map.get(q.id|string) %}
+              <div
+                class="question-item {% if resp.is_correct %}correct-border{% else %}wrong-border{% endif %}"
+              >
+                <p class="fw-bold mb-3 text-white">
+                  {{ loop.index }}. {{ q.question_text }}
+                </p>
+
+                <div class="row g-2">
+                  <div class="col-md-6">
+                    <div
+                      class="option-pill {% if resp.student_choice == 'A' %}{{ 'student-choice-correct' if resp.is_correct else 'student-choice-wrong' }}{% endif %}"
+                    >
+                      A) {{ q.option_a }}
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div
+                      class="option-pill {% if resp.student_choice == 'B' %}{{ 'student-choice-correct' if resp.is_correct else 'student-choice-wrong' }}{% endif %}"
+                    >
+                      B) {{ q.option_b }}
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div
+                      class="option-pill {% if resp.student_choice == 'C' %}{{ 'student-choice-correct' if resp.is_correct else 'student-choice-wrong' }}{% endif %}"
+                    >
+                      C) {{ q.option_c }}
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div
+                      class="option-pill {% if resp.student_choice == 'D' %}{{ 'student-choice-correct' if resp.is_correct else 'student-choice-wrong' }}{% endif %}"
+                    >
+                      D) {{ q.option_d }}
+                    </div>
+                  </div>
+                </div>
+
+                {% if not resp.is_correct %}
+                <div class="mt-3 small actual-correct">
+                  Correct Answer: {{ q.correct_answer }}
+                </div>
+                {% else %}
+                <div class="mt-3 small text-success fw-bold">✓ Correct</div>
+                {% endif %}
+              </div>
+              {% endfor %}
+            </div>
+
+            <div class="mt-5">
+              <a href="/logout" class="btn btn-outline-light px-5 py-2"
+                >Exit Secure Terminal</a
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

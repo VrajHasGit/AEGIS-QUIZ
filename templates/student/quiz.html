@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Aegis Security | Live Exam</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+      :root {
+        --bg: #0f172a;
+        --card: #1e293b;
+        --accent: #3b82f6;
+        --text: #f8fafc;
+      }
+      body {
+        background-color: var(--bg);
+        color: var(--text);
+        overflow: hidden;
+        user-select: none;
+        font-family: "Inter", sans-serif;
+      }
+
+      /* Lockdown UI */
+      #lockdown-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.98);
+        z-index: 9999;
+        display: none;
+        backdrop-filter: blur(15px);
+        align-items: center;
+        justify-content: center;
+      }
+
+      #start-overlay {
+        position: fixed;
+        inset: 0;
+        background: var(--bg);
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .quiz-card {
+        background: var(--card);
+        border: 1px solid #334155;
+        border-radius: 20px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      }
+      .q-text {
+        color: #ffffff !important;
+        font-size: 1.6rem;
+        font-weight: 500;
+      }
+
+      .option-btn {
+        background: rgba(51, 65, 85, 0.5);
+        color: #f1f5f9 !important;
+        border: 1px solid #475569;
+        width: 100%;
+        text-align: left;
+        padding: 20px;
+        margin-bottom: 15px;
+        border-radius: 12px;
+        transition: 0.3s;
+        font-size: 1.1rem;
+      }
+      .option-btn:hover {
+        background: var(--accent);
+        border-color: #60a5fa;
+        transform: translateX(5px);
+      }
+      .option-btn.selected {
+        background: var(--accent);
+        border-color: #ffffff;
+        font-weight: 600;
+      }
+
+      .status-header {
+        border-bottom: 1px solid #334155;
+        padding-bottom: 15px;
+        margin-bottom: 30px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="lockdown-overlay">
+      <div
+        class="card bg-dark border-danger p-5 text-center shadow-lg"
+        style="max-width: 500px; border-width: 2px"
+      >
+        <h2 class="text-danger fw-bold">⚠️ EXAM SUSPENDED</h2>
+
+        <div id="lockdown-form">
+          <p class="text-secondary mt-2">
+            Security violation detected (Tab Switch/Exit). Your screen is
+            locked.
+          </p>
+          <textarea
+            id="justification-text"
+            class="form-control bg-black text-white border-secondary my-4"
+            placeholder="Enter justification for Professor Vraj Shah..."
+          ></textarea>
+          <button
+            onclick="sendJustification()"
+            id="send-btn"
+            class="btn btn-danger w-100 fw-bold py-3"
+          >
+            Submit Justification
+          </button>
+          <div id="wait-msg" class="text-info mt-3 d-none">
+            Waiting for teacher approval...
+          </div>
+        </div>
+
+        <div id="resume-sync" style="display: none">
+          <p class="text-success fw-bold mb-4">
+            Professor Vraj Shah has approved your request!
+          </p>
+          <button
+            onclick="reEnterSecureMode()"
+            class="btn btn-success btn-lg w-100 fw-bold shadow"
+          >
+            RE-ENTER SECURE MODE & CONTINUE
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="start-overlay">
+      <img
+        src="https://img.icons8.com/fluency/96/shield.png"
+        class="mb-3"
+        alt="Shield Icon"
+      />
+      <h2 class="fw-bold text-white">Aegis Security Protocol</h2>
+      <p class="text-muted mb-4">
+        Click below to synchronize and enter secure full-screen mode.
+      </p>
+      <button id="entry-btn" class="btn btn-primary btn-lg px-5 fw-bold">
+        Enter Secure Exam
+      </button>
+    </div>
+
+    <div class="container mt-5" id="quiz-ui" style="display: none">
+      <div
+        class="status-header d-flex justify-content-between align-items-center"
+      >
+        <div>
+          <small class="text-muted text-uppercase fw-bold"
+            >Student Participant</small
+          >
+          <h4 class="text-info mb-0">{{ session['student_name'] }}</h4>
+        </div>
+        <div class="text-end">
+          <small class="text-muted text-uppercase fw-bold"
+            >Security Status</small
+          >
+          <div class="text-success fw-bold">🛡️ AEGIS PRO ACTIVE</div>
+        </div>
+      </div>
+
+      <div class="row justify-content-center">
+        <div class="col-lg-9">
+          <div class="card quiz-card p-5">
+            <h5 class="mb-3 fw-bold" style="color: var(--accent)">
+              QUESTION <span id="q-num">1</span>
+            </h5>
+            <h3 id="q-text" class="q-text mb-5"></h3>
+            <div id="options-container"></div>
+            <div class="mt-4 text-end">
+              <button
+                id="submit-btn"
+                class="btn btn-danger btn-lg px-5 d-none"
+                onclick="finalizeExam()"
+              >
+                Finalize Submission
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const socket = io();
+      const questions = {{ questions | tojson | safe }};
+      let currentIndex = 0;
+      let answers = {};
+      const studentName = "{{ session['student_name'] }}";
+
+      // 1. Initial Entry
+      document.getElementById('entry-btn').addEventListener('click', () => {
+          document.documentElement.requestFullscreen().catch(() => {});
+          socket.emit('join_room', { quiz_id: "{{ session['quiz_id'] }}" });
+          document.getElementById('start-overlay').style.display = 'none';
+          document.getElementById('quiz-ui').style.display = 'block';
+          loadQuestion();
+      });
+
+      function loadQuestion() {
+          const q = questions[currentIndex];
+          document.getElementById('q-num').innerText = currentIndex + 1;
+          document.getElementById('q-text').innerText = q.question_text;
+          const container = document.getElementById('options-container');
+
+          container.innerHTML = ['a','b','c','d'].map(k => `
+              <button class="btn option-btn ${answers[q.id] === k.toUpperCase() ? 'selected' : ''}"
+                      onclick="saveAnswer('${q.id}', '${k.toUpperCase()}')">
+                  <span class="fw-bold me-3 text-info">${k.toUpperCase()}</span> ${q['option_'+k]}
+              </button>
+          `).join('');
+
+          if(currentIndex === questions.length - 1) document.getElementById('submit-btn').classList.remove('d-none');
+      }
+
+      function saveAnswer(qId, choice) {
+          answers[qId] = choice;
+          if(currentIndex < questions.length - 1) {
+              currentIndex++;
+              setTimeout(loadQuestion, 300);
+          } else {
+              loadQuestion();
+          }
+      }
+
+      // 2. Violation Handling
+      function triggerLockdown() {
+          document.getElementById('lockdown-overlay').style.display = 'flex';
+          socket.emit('security_violation', { reason: "Security Boundary Breach", name: studentName });
+      }
+
+      document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement) triggerLockdown(); });
+      document.addEventListener("visibilitychange", () => { if (document.hidden) triggerLockdown(); });
+
+      function sendJustification() {
+          const msg = document.getElementById('justification-text').value;
+          if(!msg) return alert("Please enter a reason.");
+          socket.emit('submit_justification', { msg: msg, name: studentName });
+          document.getElementById('send-btn').disabled = true;
+          document.getElementById('wait-msg').classList.remove('d-none');
+      }
+
+      // 3. Resume Handshake
+      socket.on('resume_exam', function(data) {
+          if (data.target_student === studentName) {
+              document.getElementById('lockdown-form').style.display = 'none';
+              document.getElementById('resume-sync').style.display = 'block';
+          }
+      });
+
+      function reEnterSecureMode() {
+          document.documentElement.requestFullscreen().then(() => {
+              // Hide lockdown only after fullscreen is successful
+              document.getElementById('lockdown-overlay').style.display = 'none';
+
+              // Reset for next potential violation
+              document.getElementById('lockdown-form').style.display = 'block';
+              document.getElementById('resume-sync').style.display = 'none';
+              document.getElementById('send-btn').disabled = false;
+              document.getElementById('wait-msg').classList.add('d-none');
+              document.getElementById('justification-text').value = "";
+          }).catch(err => {
+              alert("Security Protocol Error: Please ensure window is not minimized.");
+          });
+      }
+
+      async function finalizeExam() {
+          const formatted = Object.entries(answers).map(([id, choice]) => ({
+              question_id: id,
+              choice: choice
+          }));
+
+          const res = await fetch('/submit_exam', {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify({ answers: formatted })
+          });
+
+          const result = await res.json();
+          if (result.status === 'success') window.location.href = result.redirect;
+      }
+    </script>
+  </body>
+</html>

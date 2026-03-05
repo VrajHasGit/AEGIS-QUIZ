@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Aegis | Proctor Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    
+    <style>
+        :root {
+            --bg-body: #0f172a;       /* Deep Navy */
+            --bg-panel: #1e293b;      /* Slate */
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            padding-top: 2rem;
+            min-height: 100vh;
+        }
+
+        /* --- DASHBOARD HEADER --- */
+        .dashboard-header {
+            background: var(--bg-panel);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 1.5rem 2rem;
+            border-radius: 16px;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+
+        .header-title h1 { font-size: 1.8rem; font-weight: 800; margin: 0; letter-spacing: -0.5px; }
+        .header-title p { color: var(--text-secondary); margin: 0; font-size: 0.9rem; }
+        
+        /* --- STATS CARDS --- */
+        .stat-card {
+            background: linear-gradient(145deg, #1e293b, #162032);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-value { font-size: 2.5rem; font-weight: 700; color: white; line-height: 1; margin-bottom: 5px; }
+        .stat-label { color: var(--text-secondary); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 1px; font-weight: 600; }
+        
+        /* Colored indicators bars on top of cards */
+        .card-blue::before { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: var(--accent-blue); }
+        .card-red::before { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: var(--accent-red); }
+        .card-green::before { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: var(--accent-green); }
+
+        /* --- TABLE STYLE --- */
+        .monitor-table-container {
+            background: var(--bg-panel);
+            border-radius: 16px;
+            padding: 1rem;
+            box-shadow: 0 10px 30px -5px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .table { --bs-table-bg: transparent; color: var(--text-primary); margin-bottom: 0; }
+        
+        .table thead th {
+            color: var(--text-secondary);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding: 1.25rem 1rem;
+        }
+
+        .table tbody td {
+            vertical-align: middle;
+            padding: 1.25rem 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 0.95rem;
+        }
+        
+        /* --- BUTTONS & BADGES --- */
+        .btn-action {
+            background: var(--accent-blue);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+        .btn-action:hover { background: #2563eb; transform: translateY(-1px); }
+        
+        .btn-resume {
+            background: rgba(16, 185, 129, 0.1); 
+            color: var(--accent-green); 
+            border: 1px solid var(--accent-green);
+        }
+        .btn-resume:hover { background: var(--accent-green); color: white; }
+
+        .approved-text {
+            color: var(--accent-green);
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+    </style>
+</head>
+<body>
+
+<div class="container-fluid px-4">
+    
+    <div class="dashboard-header">
+        <div class="header-title">
+            <h1>Aegis Command Center</h1>
+            <p>Live Proctoring | Quiz ID: <span class="text-white fw-bold">#{{ quiz_id }}</span></p>
+        </div>
+        <div class="d-flex gap-3 align-items-center">
+            <div class="text-end me-4">
+                <small class="text-secondary d-block text-uppercase" style="font-size: 0.7rem;">Session Timer</small>
+                <span id="global-timer" class="fw-bold fs-4 font-monospace">30:00</span>
+            </div>
+            
+            <button onclick="globalLaunch()" class="btn btn-action py-2 px-4">
+                🚀 Launch Exam
+            </button>
+            <a href="/dashboard" class="btn btn-outline-secondary py-2 px-4 border-0">Exit</a>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="stat-card card-blue">
+                <div class="stat-value">{{ students|length }}</div>
+                <div class="stat-label">Active Candidates</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card card-red">
+                <div class="stat-value">{{ students|selectattr('violation_count', 'gt', 0)|list|length }}</div>
+                <div class="stat-label">Security Flags</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card card-green">
+                <div class="stat-value">{{ students|selectattr('status', 'equalto', 'completed')|list|length }}</div>
+                <div class="stat-label">Submissions</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="monitor-table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Student Name</th>
+                    <th>Status</th>
+                    <th>Time Rem.</th>
+                    <th>Performance</th>
+                    <th>Violations (Adj.)</th>
+                    <th class="text-end">Controls</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in students %}
+                <tr id="row-{{ s.id }}">
+                    <td class="fw-bold text-white">{{ s.student_name }}</td>
+                    
+                    <td>
+                        {% if s.status == 'waiting' %}
+                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 rounded-pill">ACTION REQ.</span>
+                        {% elif s.status == 'completed' %}
+                            <span class="badge bg-success-subtle text-success border border-success-subtle px-3 rounded-pill">COMPLETED</span>
+                        {% else %}
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 rounded-pill">ACTIVE</span>
+                        {% endif %}
+                    </td>
+
+                    <td class="font-monospace text-secondary">
+                         {% if s.status == 'completed' %} --:-- {% else %} <span class="student-timer">29:45</span> {% endif %}
+                    </td>
+
+                    <td>
+                        {% if s.status == 'completed' %}
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="fw-bold text-success">{{ s.score }}%</span>
+                                <div class="progress" style="width: 60px; height: 4px; background: rgba(255,255,255,0.1);">
+                                    <div class="progress-bar bg-success" style="width: {{ s.score }}%"></div>
+                                </div>
+                            </div>
+                        {% else %}
+                            <span class="text-secondary small">Pending...</span>
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        {% if s.violation_count > 0 %}
+                            <span class="text-danger fw-bold">{{ s.violation_count }} Flags</span>
+                            {% if s.status == 'waiting' %}
+                                <div class="small text-secondary mt-1">
+                                    Justification: "{{ s.last_justification or 'Tab Switch' }}"
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <span class="text-secondary opacity-50">Clean</span>
+                        {% endif %}
+                    </td>
+
+                    <td class="text-end" id="ctrl-{{ s.id }}">
+                        {% if s.status == 'waiting' %}
+                            <button onclick="approveStudent('{{ s.id }}', '{{ s.student_name }}')" class="btn btn-resume btn-sm fw-bold">
+                                🔓 Approve & Resume
+                            </button>
+                        {% elif s.status == 'completed' %}
+                            <span class="text-secondary small">View Report</span>
+                        {% else %}
+                            <span class="text-success small fw-bold">✓ Monitoring</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<script>
+    const socket = io();
+    const quizId = "{{ quiz_id }}";
+
+    socket.emit('join_room', { quiz_id: quizId });
+
+    // 1. SMART APPROVE LOGIC
+    function approveStudent(id, name) {
+        // Send signal
+        socket.emit('teacher_approve_resume', { name: name, quiz_id: quizId });
+        
+        // Update UI Immediately (Button -> Text)
+        const cell = document.getElementById(`ctrl-${id}`);
+        if(cell) {
+            cell.innerHTML = `
+                <div class="approved-text justify-content-end">
+                    <svg xmlns="http://www.w3.org/2001/svg" width="16" height="16" fill="currentColor" class="bi bi-check-circle-fill" viewBox="0 0 16 16">
+                        <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+                    </svg>
+                    Approved
+                </div>
+            `;
+        }
+    }
+
+    function globalLaunch() {
+        if(confirm("Start exam timer for all students?")) {
+            socket.emit('teacher_start_exam', { quiz_id: quizId });
+            // Start local dashboard timer visual
+            startDashboardTimer();
+        }
+    }
+    
+    // Simple visual timer for dashboard
+    function startDashboardTimer() {
+        let duration = 30 * 60;
+        const display = document.getElementById('global-timer');
+        setInterval(() => {
+            let m = Math.floor(duration / 60);
+            let s = duration % 60;
+            display.textContent = `${m}:${s < 10 ? '0'+s : s}`;
+            duration--;
+        }, 1000);
+    }
+
+    socket.on('receive_justification', () => location.reload());
+    socket.on('student_completed', () => location.reload());
+
+</script>
+</body>
+</html>

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Join AegisQuiz | Secure Entrance</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #0f172a;
+        --card: #1e293b;
+        --accent: #3b82f6;
+        --text: #f8fafc;
+      }
+      body {
+        background-color: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        font-family: "Inter", sans-serif;
+      }
+      .join-card {
+        background: var(--card);
+        border: 1px solid #334155;
+        border-radius: 20px;
+        padding: 40px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+      }
+      .form-label {
+        color: var(--text) !important;
+        font-weight: 600;
+        font-size: 1rem;
+        margin-bottom: 8px;
+      }
+      .form-control {
+        background: #0f172a !important;
+        border: 2px solid #334155 !important;
+        color: white !important;
+        padding: 12px;
+        transition: 0.3s;
+      }
+      .form-control:focus {
+        border-color: var(--accent) !important;
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+      }
+      .btn-join {
+        background: var(--accent);
+        border: none;
+        padding: 14px;
+        font-weight: 700;
+        border-radius: 12px;
+        transition: 0.3s;
+      }
+      .btn-join:hover {
+        background: #2563eb;
+        transform: translateY(-2px);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-md-5">
+          <div class="join-card text-center">
+            <img
+              src="https://img.icons8.com/fluency/96/shield.png"
+              class="mb-3"
+              width="60"
+            />
+            <h2 class="fw-bold mb-4">Join AegisQuiz</h2>
+            <form action="/student/join" method="POST" class="text-start">
+              <div class="mb-3">
+                <label class="form-label">Exam Access Code</label>
+                <input
+                  type="text"
+                  name="code"
+                  class="form-control"
+                  placeholder="E.G. F9162B4A"
+                  required
+                />
+              </div>
+              <div class="mb-4">
+                <label class="form-label">Full Name</label>
+                <input
+                  type="text"
+                  name="name"
+                  class="form-control"
+                  placeholder="Your Name"
+                  required
+                />
+              </div>
+              <button type="submit" class="btn btn-primary btn-join w-100">
+                Enter Waiting Room
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
