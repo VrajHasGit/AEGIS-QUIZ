@@ -1,212 +1,290 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Aegis Security | Exam Report</title>
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-    />
-    <style>
-      :root {
-        --bg-deep: #0f172a;
-        --card-bg: #1e293b;
-        --accent-blue: #3b82f6;
-        --success-green: #10b981;
-        --danger-red: #ef4444;
-      }
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AegisQuiz | Exam Report</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #060b18;
+      --surface: rgba(15, 23, 42, 0.85);
+      --border: rgba(99, 120, 180, 0.2);
+      --accent: #4f7ef8;
+      --text: #f1f5f9;
+      --muted: #64748b;
+      --success: #10b981;
+      --danger: #ef4444;
+    }
 
-      body {
-        background-color: var(--bg-deep);
-        color: #f8fafc;
-        font-family: "Inter", sans-serif;
-        min-height: 100vh;
-        display: flex;
-        align-items: center;
-      }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      min-height: 100vh;
+      color: var(--text);
+      position: relative;
+    }
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(79,126,248,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(79,126,248,0.03) 1px, transparent 1px);
+      background-size: 50px 50px;
+      pointer-events: none;
+    }
 
-      .result-card {
-        background-color: var(--card-bg);
-        border: 1px solid #334155;
-        border-radius: 20px;
-        padding: 40px;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-      }
+    .orb {
+      position: fixed; border-radius: 50%; filter: blur(80px); pointer-events: none;
+    }
+    .orb-1 {
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(79,126,248,0.12) 0%, transparent 70%);
+      top: -100px; right: -100px;
+    }
+    .orb-2 {
+      width: 350px; height: 350px;
+      background: radial-gradient(circle, rgba(16,185,129,0.08) 0%, transparent 70%);
+      bottom: -100px; left: -50px;
+    }
 
-      .score-display {
-        font-size: 4rem;
-        font-weight: 800;
-        color: white;
-        text-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
-      }
+    .container {
+      max-width: 800px; margin: 0 auto;
+      padding: 48px 20px;
+      position: relative; z-index: 10;
+    }
 
-      .stat-box {
-        background: rgba(15, 23, 42, 0.5);
-        border: 1px solid #334155;
-        border-radius: 12px;
-        padding: 20px;
-      }
+    /* Score Hero */
+    .score-hero {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 48px 40px;
+      text-align: center;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 25px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+      margin-bottom: 24px;
+      animation: slideUp 0.6s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
 
-      .review-scroll {
-        max-height: 450px;
-        overflow-y: auto;
-        padding-right: 15px;
-        text-align: left;
-      }
+    .report-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(79,126,248,0.1);
+      border: 1px solid rgba(79,126,248,0.25);
+      border-radius: 100px;
+      padding: 6px 16px;
+      font-size: 0.75rem; font-weight: 600;
+      color: var(--accent); text-transform: uppercase; letter-spacing: 1.5px;
+      margin-bottom: 28px;
+    }
 
-      /* Custom Scrollbar */
-      .review-scroll::-webkit-scrollbar {
-        width: 6px;
-      }
-      .review-scroll::-webkit-scrollbar-track {
-        background: #0f172a;
-      }
-      .review-scroll::-webkit-scrollbar-thumb {
-        background: #334155;
-        border-radius: 10px;
-      }
+    .score-circle {
+      width: 140px; height: 140px;
+      border-radius: 50%;
+      border: 5px solid rgba(79,126,248,0.2);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      margin: 0 auto 24px;
+      position: relative;
+      animation: scoreReveal 1s cubic-bezier(0.22,1,0.36,1) 0.3s both;
+    }
+    @keyframes scoreReveal {
+      from { opacity: 0; transform: scale(0.7); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .score-circle.great { border-color: rgba(16,185,129,0.5); box-shadow: 0 0 40px rgba(16,185,129,0.2); }
+    .score-circle.good { border-color: rgba(251,191,36,0.5); box-shadow: 0 0 40px rgba(251,191,36,0.15); }
+    .score-circle.poor { border-color: rgba(239,68,68,0.5); box-shadow: 0 0 40px rgba(239,68,68,0.15); }
 
-      .question-item {
-        background: #111827;
-        border-left: 4px solid #334155;
-        border-radius: 8px;
-        padding: 15px;
-        margin-bottom: 15px;
-      }
+    .score-number {
+      font-size: 3rem; font-weight: 900; line-height: 1;
+      letter-spacing: -2px;
+      color: var(--text);
+    }
+    .score-pct { font-size: 1rem; color: var(--muted); font-weight: 500; }
 
-      .correct-border {
-        border-left-color: var(--success-green);
-      }
-      .wrong-border {
-        border-left-color: var(--danger-red);
-      }
+    .result-name { font-size: 1.3rem; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+    .result-sub { font-size: 0.9rem; color: var(--muted); margin-bottom: 32px; }
 
-      .option-pill {
-        padding: 8px 12px;
-        border-radius: 6px;
-        font-size: 0.85rem;
-        margin-bottom: 5px;
-        background: #1f2937;
-        border: 1px solid #374151;
-        color: white;
-      }
+    .stats-row {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .stat-box {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 14px; padding: 18px;
+    }
+    .stat-label {
+      font-size: 0.72rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 1.5px;
+      color: var(--muted); margin-bottom: 6px;
+    }
+    .stat-val { font-size: 1.3rem; font-weight: 800; }
+    .stat-val.clean { color: var(--success); }
+    .stat-val.flagged { color: var(--danger); }
+    .stat-val.verified { color: var(--accent); }
 
-      .student-choice-correct {
-        background: #064e3b !important;
-        border-color: var(--success-green) !important;
-        color: white;
-      }
-      .student-choice-wrong {
-        background: #7f1d1d !important;
-        border-color: var(--danger-red) !important;
-        color: white;
-      }
-      .actual-correct {
-        border: 1px dashed var(--success-green);
-        color: var(--success-green);
-        font-weight: bold;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="container py-5">
-      <div class="row justify-content-center">
-        <div class="col-lg-8">
-          <div class="card result-card text-center">
-            <h2 class="fw-bold mb-1 text-white">Performance Report</h2>
-            <p class="text-white mb-4">Exam Session Secured by Aegis Pro</p>
+    /* Review Section */
+    .review-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 36px;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 25px 60px rgba(0,0,0,0.4);
+      animation: slideUp 0.6s cubic-bezier(0.22,1,0.36,1) 0.2s both;
+      margin-bottom: 24px;
+    }
 
-            <div class="score-display mb-2">{{ score }}%</div>
-            <p class="lead mb-4 text-white">
-              Total Score for {{ session['student_name'] }}
-            </p>
+    .section-title {
+      font-size: 0.75rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 2px;
+      color: var(--muted); margin-bottom: 24px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
-            <div class="row g-3 mb-5">
-              <div class="col-6">
-                <div class="stat-box">
-                  <small class="text-uppercase text-white fw-bold"
-                    >Security Status</small
-                  >
-                  <h4
-                    class="mb-0 {% if violations > 0 %}text-danger{% else %}text-success{% endif %}"
-                  >
-                    {{ violations }} Violations
-                  </h4>
-                </div>
-              </div>
-              <div class="col-6">
-                <div class="stat-box">
-                  <small class="text-uppercase text-white fw-bold"
-                    >Submission</small
-                  >
-                  <h4 class="mb-0 text-info">Verified</h4>
-                </div>
-              </div>
-            </div>
+    .q-review-item {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border);
+      border-left: 4px solid transparent;
+      border-radius: 14px; padding: 20px;
+      margin-bottom: 14px;
+      transition: border-color 0.2s;
+    }
+    .q-review-item.correct { border-left-color: var(--success); }
+    .q-review-item.wrong { border-left-color: var(--danger); }
 
-            <hr class="border-white my-5" />
+    .q-number {
+      font-size: 0.72rem; font-weight: 600;
+      color: var(--muted); text-transform: uppercase;
+      letter-spacing: 1px; margin-bottom: 8px;
+    }
+    .q-review-text {
+      font-size: 0.95rem; font-weight: 600; color: var(--text);
+      margin-bottom: 14px; line-height: 1.5;
+    }
 
-            <h4 class="text-start fw-bold mb-4 text-white">Question Review</h4>
-            <div class="review-scroll">
-              {% for q in questions %} {% set resp =
-              response_map.get(q.id|string) %}
-              <div
-                class="question-item {% if resp.is_correct %}correct-border{% else %}wrong-border{% endif %}"
-              >
-                <p class="fw-bold mb-3 text-white">
-                  {{ loop.index }}. {{ q.question_text }}
-                </p>
+    .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .opt-pill {
+      padding: 10px 12px; border-radius: 10px;
+      font-size: 0.83rem; border: 1px solid var(--border);
+      background: rgba(255,255,255,0.03); color: var(--text);
+      line-height: 1.4;
+    }
+    .opt-pill.chosen-correct { background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.4); color: #6ee7b7; }
+    .opt-pill.chosen-wrong { background: rgba(239,68,68,0.12); border-color: rgba(239,68,68,0.4); color: #fca5a5; }
+    .opt-pill.correct-answer { border: 1px dashed rgba(16,185,129,0.5); color: var(--success); }
 
-                <div class="row g-2">
-                  <div class="col-md-6">
-                    <div
-                      class="option-pill {% if resp.student_choice == 'A' %}{{ 'student-choice-correct' if resp.is_correct else 'student-choice-wrong' }}{% endif %}"
-                    >
-                      A) {{ q.option_a }}
-                    </div>
-                  </div>
-                  <div class="col-md-6">
-                    <div
-                      class="option-pill {% if resp.student_choice == 'B' %}{{ 'student-choice-correct' if resp.is_correct else 'student-choice-wrong' }}{% endif %}"
-                    >
-                      B) {{ q.option_b }}
-                    </div>
-                  </div>
-                  <div class="col-md-6">
-                    <div
-                      class="option-pill {% if resp.student_choice == 'C' %}{{ 'student-choice-correct' if resp.is_correct else 'student-choice-wrong' }}{% endif %}"
-                    >
-                      C) {{ q.option_c }}
-                    </div>
-                  </div>
-                  <div class="col-md-6">
-                    <div
-                      class="option-pill {% if resp.student_choice == 'D' %}{{ 'student-choice-correct' if resp.is_correct else 'student-choice-wrong' }}{% endif %}"
-                    >
-                      D) {{ q.option_d }}
-                    </div>
-                  </div>
-                </div>
+    .q-verdict {
+      margin-top: 12px; font-size: 0.82rem; font-weight: 600;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .q-verdict.correct-v { color: var(--success); }
+    .q-verdict.wrong-v { color: var(--danger); }
 
-                {% if not resp.is_correct %}
-                <div class="mt-3 small actual-correct">
-                  Correct Answer: {{ q.correct_answer }}
-                </div>
-                {% else %}
-                <div class="mt-3 small text-success fw-bold">✓ Correct</div>
-                {% endif %}
-              </div>
-              {% endfor %}
-            </div>
+    /* Review scroll */
+    .review-scroll { max-height: 500px; overflow-y: auto; padding-right: 6px; }
+    .review-scroll::-webkit-scrollbar { width: 4px; }
+    .review-scroll::-webkit-scrollbar-track { background: transparent; }
+    .review-scroll::-webkit-scrollbar-thumb { background: rgba(99,120,180,0.3); border-radius: 4px; }
 
-            <div class="mt-5">
-              <a href="/logout" class="btn btn-outline-light px-5 py-2"
-                >Exit Secure Terminal</a
-              >
-            </div>
+    .exit-btn {
+      display: block; width: 100%;
+      padding: 15px;
+      background: rgba(255,255,255,0.05);
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      color: var(--text); font-family: 'Inter', sans-serif;
+      font-size: 0.95rem; font-weight: 600;
+      text-align: center; text-decoration: none;
+      cursor: pointer; transition: all 0.25s;
+    }
+    .exit-btn:hover {
+      background: rgba(255,255,255,0.09);
+      border-color: rgba(99,120,180,0.4);
+      color: var(--text);
+    }
+  </style>
+</head>
+<body>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <div class="container">
+    <!-- Score Hero -->
+    <div class="score-hero">
+      <div class="report-badge">🛡️ Aegis Secured Session</div>
+
+      {% set score_class = 'great' if score >= 75 else ('good' if score >= 50 else 'poor') %}
+      <div class="score-circle {{ score_class }}">
+        <div class="score-number">{{ score }}</div>
+        <div class="score-pct">% Score</div>
+      </div>
+
+      <div class="result-name">{{ session['student_name'] }}</div>
+      <div class="result-sub">
+        {% if score >= 75 %}Excellent performance! 🎉
+        {% elif score >= 50 %}Good effort — keep pushing! 💪
+        {% else %}Keep studying — you can do better! 📚{% endif %}
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-box">
+          <div class="stat-label">Security Status</div>
+          <div class="stat-val {% if violations > 0 %}flagged{% else %}clean{% endif %}">
+            {% if violations > 0 %}{{ violations }} Flags{% else %}✓ Clean{% endif %}
           </div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Submission</div>
+          <div class="stat-val verified">✓ Verified</div>
         </div>
       </div>
     </div>
-  </body>
+
+    <!-- Question Review -->
+    <div class="review-section">
+      <div class="section-title">Question Review</div>
+      <div class="review-scroll">
+        {% for q in questions %}
+          {% set resp = response_map.get(q.id|string) %}
+          <div class="q-review-item {% if resp and resp.is_correct %}correct{% else %}wrong{% endif %}">
+            <div class="q-number">Question {{ loop.index }}</div>
+            <div class="q-review-text">{{ q.question_text }}</div>
+            <div class="options-grid">
+              {% for letter, text in [('A', q.option_a), ('B', q.option_b), ('C', q.option_c), ('D', q.option_d)] %}
+                {% set is_chosen = resp and resp.student_choice == letter %}
+                {% set is_correct_ans = q.correct_answer == letter %}
+                <div class="opt-pill
+                  {% if is_chosen and resp.is_correct %}chosen-correct
+                  {% elif is_chosen and not resp.is_correct %}chosen-wrong
+                  {% elif is_correct_ans and resp and not resp.is_correct %}correct-answer
+                  {% endif %}">
+                  <strong>{{ letter }})</strong> {{ text }}
+                </div>
+              {% endfor %}
+            </div>
+            <div class="q-verdict {% if resp and resp.is_correct %}correct-v{% else %}wrong-v{% endif %}">
+              {% if resp and resp.is_correct %}
+                ✓ Correct
+              {% else %}
+                ✗ Incorrect — Correct: {{ q.correct_answer }}
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <a href="/logout" class="exit-btn">Exit Secure Terminal</a>
+  </div>
+</body>
 </html>

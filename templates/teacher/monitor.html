@@ -1,293 +1,527 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Aegis | Proctor Dashboard</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-    
-    <style>
-        :root {
-            --bg-body: #0f172a;       /* Deep Navy */
-            --bg-panel: #1e293b;      /* Slate */
-            --text-primary: #f8fafc;
-            --text-secondary: #94a3b8;
-            --accent-blue: #3b82f6;
-            --accent-green: #10b981;
-            --accent-red: #ef4444;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aegis | Proctor Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #060b18;
+      --surface: rgba(15, 23, 42, 0.9);
+      --border: rgba(99, 120, 180, 0.15);
+      --accent: #4f7ef8;
+      --text: #f1f5f9;
+      --muted: #64748b;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+    }
 
-        body {
-            background-color: var(--bg-body);
-            color: var(--text-primary);
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            padding-top: 2rem;
-            min-height: 100vh;
-        }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      min-height: 100vh;
+      color: var(--text);
+      position: relative;
+    }
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(79,126,248,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(79,126,248,0.025) 1px, transparent 1px);
+      background-size: 50px 50px; pointer-events: none;
+    }
 
-        /* --- DASHBOARD HEADER --- */
-        .dashboard-header {
-            background: var(--bg-panel);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            padding: 1.5rem 2rem;
-            border-radius: 16px;
-            margin-bottom: 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-        }
+    /* ===== TOP BAR ===== */
+    .topbar {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(6,11,24,0.95);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(20px);
+      padding: 0 28px; height: 68px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
 
-        .header-title h1 { font-size: 1.8rem; font-weight: 800; margin: 0; letter-spacing: -0.5px; }
-        .header-title p { color: var(--text-secondary); margin: 0; font-size: 0.9rem; }
-        
-        /* --- STATS CARDS --- */
-        .stat-card {
-            background: linear-gradient(145deg, #1e293b, #162032);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 16px;
-            padding: 1.5rem;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .stat-value { font-size: 2.5rem; font-weight: 700; color: white; line-height: 1; margin-bottom: 5px; }
-        .stat-label { color: var(--text-secondary); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 1px; font-weight: 600; }
-        
-        /* Colored indicators bars on top of cards */
-        .card-blue::before { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: var(--accent-blue); }
-        .card-red::before { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: var(--accent-red); }
-        .card-green::before { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: var(--accent-green); }
+    .topbar-left { display: flex; align-items: center; gap: 20px; }
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .brand-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, var(--accent), #7c3aed);
+      border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px;
+    }
+    .brand-name { font-size: 1rem; font-weight: 800; color: var(--text); }
 
-        /* --- TABLE STYLE --- */
-        .monitor-table-container {
-            background: var(--bg-panel);
-            border-radius: 16px;
-            padding: 1rem;
-            box-shadow: 0 10px 30px -5px rgba(0,0,0,0.3);
-            border: 1px solid rgba(255,255,255,0.05);
-        }
+    .quiz-info-chip {
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+      border-radius: 100px; padding: 5px 14px;
+      font-size: 0.78rem; color: var(--muted);
+    }
+    .quiz-info-chip strong { color: var(--text); }
 
-        .table { --bs-table-bg: transparent; color: var(--text-primary); margin-bottom: 0; }
-        
-        .table thead th {
-            color: var(--text-secondary);
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 0.75rem;
-            letter-spacing: 0.05em;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            padding: 1.25rem 1rem;
-        }
+    .topbar-right { display: flex; align-items: center; gap: 16px; }
 
-        .table tbody td {
-            vertical-align: middle;
-            padding: 1.25rem 1rem;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            font-size: 0.95rem;
-        }
-        
-        /* --- BUTTONS & BADGES --- */
-        .btn-action {
-            background: var(--accent-blue);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 0.85rem;
-            transition: all 0.2s;
-        }
-        .btn-action:hover { background: #2563eb; transform: translateY(-1px); }
-        
-        .btn-resume {
-            background: rgba(16, 185, 129, 0.1); 
-            color: var(--accent-green); 
-            border: 1px solid var(--accent-green);
-        }
-        .btn-resume:hover { background: var(--accent-green); color: white; }
+    .live-indicator {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 0.78rem; font-weight: 600; color: var(--success);
+    }
+    .live-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--success);
+      animation: blink 1.5s ease-in-out infinite;
+    }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 
-        .approved-text {
-            color: var(--accent-green);
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            animation: fadeIn 0.3s ease-in;
-        }
-        
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    .timer-chip {
+      background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+      border-radius: 10px; padding: 6px 14px;
+      font-family: 'JetBrains Mono', monospace; font-size: 1rem; font-weight: 500;
+      color: var(--text);
+    }
 
-    </style>
+    .btn-launch {
+      padding: 9px 22px; border-radius: 10px; border: none;
+      background: linear-gradient(135deg, var(--accent), #7c3aed);
+      color: white; font-family: 'Inter', sans-serif;
+      font-size: 0.85rem; font-weight: 700; cursor: pointer;
+      transition: all 0.25s;
+    }
+    .btn-launch:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(79,126,248,0.4); }
+
+    .btn-exit {
+      padding: 8px 16px; border-radius: 10px;
+      background: transparent; border: 1px solid var(--border);
+      color: var(--muted); font-family: 'Inter', sans-serif;
+      font-size: 0.85rem; font-weight: 600; cursor: pointer;
+      text-decoration: none; transition: all 0.2s;
+    }
+    .btn-exit:hover { border-color: rgba(99,120,180,0.4); color: var(--text); }
+
+    /* ===== MAIN ===== */
+    .main { padding: 28px; max-width: 1200px; margin: 0 auto; }
+
+    /* Stat Grid */
+    .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 28px; }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px; padding: 22px 24px;
+      backdrop-filter: blur(20px);
+      position: relative; overflow: hidden;
+      animation: slideUp 0.5s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    .stat-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    }
+    .stat-card.blue::before { background: linear-gradient(90deg, var(--accent), #7c3aed); }
+    .stat-card.red::before { background: var(--danger); }
+    .stat-card.green::before { background: var(--success); }
+    .stat-card:nth-child(2) { animation-delay: 0.07s; }
+    .stat-card:nth-child(3) { animation-delay: 0.14s; }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .stat-value {
+      font-size: 2.4rem; font-weight: 800; line-height: 1;
+      letter-spacing: -1px; color: var(--text);
+      margin-bottom: 6px;
+      transition: all 0.5s;
+    }
+    .stat-label {
+      font-size: 0.72rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted);
+    }
+
+    /* Monitor Table */
+    .monitor-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px; overflow: hidden;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+      animation: slideUp 0.5s cubic-bezier(0.22,1,0.36,1) 0.2s both;
+    }
+
+    .panel-header {
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .panel-title { font-size: 0.85rem; font-weight: 700; }
+    .panel-sub { font-size: 0.78rem; color: var(--muted); }
+
+    table { width: 100%; border-collapse: collapse; }
+    thead th {
+      padding: 14px 20px; text-align: left;
+      font-size: 0.68rem; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 1.5px; color: var(--muted);
+      border-bottom: 1px solid var(--border);
+    }
+    tbody tr {
+      border-bottom: 1px solid rgba(99,120,180,0.06);
+      transition: background 0.15s;
+    }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: rgba(255,255,255,0.02); }
+    tbody td { padding: 15px 20px; font-size: 0.88rem; vertical-align: middle; }
+
+    .student-name-cell { font-weight: 700; color: var(--text); font-size: 0.92rem; }
+
+    .status-badge {
+      padding: 4px 12px; border-radius: 100px;
+      font-size: 0.7rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 1px; display: inline-block;
+    }
+    .badge-waiting { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #fca5a5; }
+    .badge-active { background: rgba(79,126,248,0.1); border: 1px solid rgba(79,126,248,0.3); color: #93c5fd; }
+    .badge-completed { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); color: #6ee7b7; }
+
+    .timer-cell {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem; color: var(--muted);
+    }
+
+    .score-cell { display: flex; align-items: center; gap: 8px; }
+    .score-bar {
+      width: 50px; height: 4px;
+      background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden;
+    }
+    .score-fill { height: 100%; background: var(--success); border-radius: 4px; }
+    .score-value { font-size: 0.9rem; font-weight: 700; color: var(--success); }
+
+    .violation-cell { font-weight: 700; }
+    .violation-cell.has-violations { color: var(--danger); }
+    .violation-cell.clean { color: var(--muted); opacity: 0.6; }
+
+    .btn-approve {
+      padding: 8px 16px; border-radius: 9px;
+      background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3);
+      color: var(--success); font-family: 'Inter', sans-serif;
+      font-size: 0.78rem; font-weight: 700; cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-approve:hover { background: rgba(16,185,129,0.2); color: white; }
+
+    .btn-deny {
+      padding: 8px 16px; border-radius: 9px;
+      background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3);
+      color: #fca5a5; font-family: 'Inter', sans-serif;
+      font-size: 0.78rem; font-weight: 700; cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-deny:hover { background: rgba(239,68,68,0.2); color: white; }
+
+    .approved-indicator {
+      display: inline-flex; align-items: center; gap: 6px;
+      color: var(--success); font-weight: 700; font-size: 0.82rem;
+    }
+
+    /* Violation ticker */
+    .alert-ticker {
+      position: fixed; bottom: 24px; right: 24px; z-index: 999;
+      max-width: 340px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .alert-item {
+      background: rgba(15,23,42,0.98); border: 1px solid rgba(239,68,68,0.4);
+      border-radius: 14px; padding: 14px 18px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      backdrop-filter: blur(20px);
+      animation: alertIn 0.4s cubic-bezier(0.22,1,0.36,1) both;
+      display: flex; gap: 12px; align-items: flex-start;
+    }
+    @keyframes alertIn {
+      from { opacity: 0; transform: translateX(20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    .alert-icon { font-size: 1.2rem; flex-shrink: 0; }
+    .alert-name { font-weight: 700; font-size: 0.85rem; color: var(--danger); }
+    .alert-reason { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+
+    .empty-monitor {
+      text-align: center; padding: 60px 24px; color: var(--muted);
+    }
+    .empty-icon { font-size: 2.5rem; margin-bottom: 12px; opacity: 0.5; }
+  </style>
 </head>
 <body>
+  <!-- Top Bar -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="brand">
+        <div class="brand-icon">🛡️</div>
+        <span class="brand-name">Aegis Command Center</span>
+      </div>
+      <div class="quiz-info-chip">
+        📋 <strong>{{ quiz.title }}</strong> &nbsp;·&nbsp; Code: <strong>{{ quiz.access_code }}</strong>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="live-indicator">
+        <div class="live-dot"></div> LIVE
+      </div>
+      <div class="timer-chip" id="global-timer">--:--</div>
+      <button onclick="globalLaunch()" class="btn-launch">🚀 Launch Exam</button>
+      <a href="/dashboard" class="btn-exit">← Exit</a>
+    </div>
+  </div>
 
-<div class="container-fluid px-4">
-    
-    <div class="dashboard-header">
-        <div class="header-title">
-            <h1>Aegis Command Center</h1>
-            <p>Live Proctoring | Quiz ID: <span class="text-white fw-bold">#{{ quiz_id }}</span></p>
-        </div>
-        <div class="d-flex gap-3 align-items-center">
-            <div class="text-end me-4">
-                <small class="text-secondary d-block text-uppercase" style="font-size: 0.7rem;">Session Timer</small>
-                <span id="global-timer" class="fw-bold fs-4 font-monospace">30:00</span>
-            </div>
-            
-            <button onclick="globalLaunch()" class="btn btn-action py-2 px-4">
-                🚀 Launch Exam
-            </button>
-            <a href="/dashboard" class="btn btn-outline-secondary py-2 px-4 border-0">Exit</a>
-        </div>
+  <div class="main">
+    <!-- Stats -->
+    <div class="stat-grid">
+      <div class="stat-card blue">
+        <div class="stat-value" id="stat-total">{{ students|length }}</div>
+        <div class="stat-label">Active Candidates</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-value" id="stat-flags">{{ students|selectattr('violation_count', 'gt', 0)|list|length }}</div>
+        <div class="stat-label">Security Flags</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-value" id="stat-done">{{ students|selectattr('status', 'equalto', 'completed')|list|length }}</div>
+        <div class="stat-label">Submissions</div>
+      </div>
     </div>
 
-    <div class="row g-4 mb-4">
-        <div class="col-md-4">
-            <div class="stat-card card-blue">
-                <div class="stat-value">{{ students|length }}</div>
-                <div class="stat-label">Active Candidates</div>
-            </div>
+    <!-- Monitor Table -->
+    <div class="monitor-panel">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Live Student Monitor</div>
+          <div class="panel-sub">Real-time session tracking</div>
         </div>
-        <div class="col-md-4">
-            <div class="stat-card card-red">
-                <div class="stat-value">{{ students|selectattr('violation_count', 'gt', 0)|list|length }}</div>
-                <div class="stat-label">Security Flags</div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="stat-card card-green">
-                <div class="stat-value">{{ students|selectattr('status', 'equalto', 'completed')|list|length }}</div>
-                <div class="stat-label">Submissions</div>
-            </div>
-        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th>Status</th>
+            <th>Time Remaining</th>
+            <th>Performance</th>
+            <th>Violations</th>
+            <th style="text-align:right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="student-table-body">
+          {% if students %}
+            {% for s in students %}
+            <tr id="row-{{ s.id }}">
+              <td class="student-name-cell">{{ s.student_name }}</td>
+              <td>
+                {% if s.status == 'waiting' %}
+                  <span class="status-badge badge-waiting">⚠ Action Req.</span>
+                {% elif s.status == 'completed' %}
+                  <span class="status-badge badge-completed">✓ Completed</span>
+                {% else %}
+                  <span class="status-badge badge-active">● Active</span>
+                {% endif %}
+              </td>
+              <td class="timer-cell">
+                {% if s.status == 'completed' %} --:-- {% else %}<span class="student-timer">--:--</span>{% endif %}
+              </td>
+              <td>
+                {% if s.status == 'completed' %}
+                  <div class="score-cell">
+                    <span class="score-value">{{ s.score }}%</span>
+                    <div class="score-bar"><div class="score-fill" style="width:{{ s.score }}%"></div></div>
+                  </div>
+                {% else %}
+                  <span style="color: var(--muted); font-size: 0.82rem;">Pending...</span>
+                {% endif %}
+              </td>
+              <td>
+                <div class="violation-cell {% if s.violation_count > 0 %}has-violations{% else %}clean{% endif %}">
+                  {% if s.violation_count > 0 %}{{ s.violation_count }} Flag(s){% else %}Clean{% endif %}
+                </div>
+              </td>
+              <td style="text-align:right;" id="ctrl-{{ s.id }}">
+                {% if s.status == 'waiting' %}
+                  <button onclick="approveStudent('{{ s.id }}', '{{ s.student_name }}')" class="btn-approve">🔓 Approve</button>
+                  <button onclick="denyStudent('{{ s.id }}', '{{ s.student_name }}')" class="btn-deny">❌ Deny</button>
+                {% elif s.status == 'completed' %}
+                  <span style="color: var(--muted); font-size: 0.8rem;">Done</span>
+                {% elif s.status == 'terminated' %}
+                  <span style="color: var(--danger); font-size: 0.8rem; font-weight: 600;">Terminated</span>
+                {% else %}
+                  <span style="color: var(--success); font-size: 0.8rem; font-weight: 600;">✓ Monitoring</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          {% else %}
+            <tr><td colspan="6">
+              <div class="empty-monitor">
+                <div class="empty-icon">👥</div>
+                <div>No students have joined yet.</div>
+              </div>
+            </td></tr>
+          {% endif %}
+        </tbody>
+      </table>
     </div>
+  </div>
 
-    <div class="monitor-table-container">
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Student Name</th>
-                    <th>Status</th>
-                    <th>Time Rem.</th>
-                    <th>Performance</th>
-                    <th>Violations (Adj.)</th>
-                    <th class="text-end">Controls</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for s in students %}
-                <tr id="row-{{ s.id }}">
-                    <td class="fw-bold text-white">{{ s.student_name }}</td>
-                    
-                    <td>
-                        {% if s.status == 'waiting' %}
-                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 rounded-pill">ACTION REQ.</span>
-                        {% elif s.status == 'completed' %}
-                            <span class="badge bg-success-subtle text-success border border-success-subtle px-3 rounded-pill">COMPLETED</span>
-                        {% else %}
-                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 rounded-pill">ACTIVE</span>
-                        {% endif %}
-                    </td>
+  <!-- Alert Ticker -->
+  <div class="alert-ticker" id="alert-ticker"></div>
 
-                    <td class="font-monospace text-secondary">
-                         {% if s.status == 'completed' %} --:-- {% else %} <span class="student-timer">29:45</span> {% endif %}
-                    </td>
-
-                    <td>
-                        {% if s.status == 'completed' %}
-                            <div class="d-flex align-items-center gap-2">
-                                <span class="fw-bold text-success">{{ s.score }}%</span>
-                                <div class="progress" style="width: 60px; height: 4px; background: rgba(255,255,255,0.1);">
-                                    <div class="progress-bar bg-success" style="width: {{ s.score }}%"></div>
-                                </div>
-                            </div>
-                        {% else %}
-                            <span class="text-secondary small">Pending...</span>
-                        {% endif %}
-                    </td>
-
-                    <td>
-                        {% if s.violation_count > 0 %}
-                            <span class="text-danger fw-bold">{{ s.violation_count }} Flags</span>
-                            {% if s.status == 'waiting' %}
-                                <div class="small text-secondary mt-1">
-                                    Justification: "{{ s.last_justification or 'Tab Switch' }}"
-                                </div>
-                            {% endif %}
-                        {% else %}
-                            <span class="text-secondary opacity-50">Clean</span>
-                        {% endif %}
-                    </td>
-
-                    <td class="text-end" id="ctrl-{{ s.id }}">
-                        {% if s.status == 'waiting' %}
-                            <button onclick="approveStudent('{{ s.id }}', '{{ s.student_name }}')" class="btn btn-resume btn-sm fw-bold">
-                                🔓 Approve & Resume
-                            </button>
-                        {% elif s.status == 'completed' %}
-                            <span class="text-secondary small">View Report</span>
-                        {% else %}
-                            <span class="text-success small fw-bold">✓ Monitoring</span>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-</div>
-
-<script>
+  <script>
     const socket = io();
     const quizId = "{{ quiz_id }}";
-
     socket.emit('join_room', { quiz_id: quizId });
+    let timerRunning = false;
 
-    // 1. SMART APPROVE LOGIC
+    // Build a name → row ID map from the table for dynamic updates
+    const studentNameMap = {};
+    document.querySelectorAll('#student-table-body tr[id^="row-"]').forEach(row => {
+      const nameCell = row.querySelector('.student-name-cell');
+      if (nameCell) {
+        studentNameMap[nameCell.textContent.trim()] = row.id.replace('row-', '');
+      }
+    });
+
     function approveStudent(id, name) {
-        // Send signal
-        socket.emit('teacher_approve_resume', { name: name, quiz_id: quizId });
-        
-        // Update UI Immediately (Button -> Text)
-        const cell = document.getElementById(`ctrl-${id}`);
-        if(cell) {
-            cell.innerHTML = `
-                <div class="approved-text justify-content-end">
-                    <svg xmlns="http://www.w3.org/2001/svg" width="16" height="16" fill="currentColor" class="bi bi-check-circle-fill" viewBox="0 0 16 16">
-                        <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
-                    </svg>
-                    Approved
-                </div>
-            `;
+      socket.emit('teacher_approve_resume', { name, quiz_id: quizId });
+      const cell = document.getElementById(`ctrl-${id}`);
+      if (cell) {
+        cell.innerHTML = `<div class="approved-indicator">✓ Approved</div>`;
+      }
+      // Reset status badge back to active
+      const row = document.getElementById(`row-${id}`);
+      if (row) {
+        const statusCell = row.querySelectorAll('td')[1];
+        if (statusCell) {
+          statusCell.innerHTML = `<span class="status-badge badge-active">● Active</span>`;
         }
+      }
+    }
+
+    function denyStudent(id, name) {
+      socket.emit('teacher_deny_resume', { name, quiz_id: quizId });
+      const cell = document.getElementById(`ctrl-${id}`);
+      if (cell) {
+        cell.innerHTML = `<span style="color: var(--danger); font-size: 0.8rem; font-weight: 600;">Terminated</span>`;
+      }
+      // Update status badge to terminated
+      const row = document.getElementById(`row-${id}`);
+      if (row) {
+        const statusCell = row.querySelectorAll('td')[1];
+        if (statusCell) {
+          statusCell.innerHTML = `<span class="status-badge badge-waiting">✕ Terminated</span>`;
+        }
+      }
     }
 
     function globalLaunch() {
-        if(confirm("Start exam timer for all students?")) {
-            socket.emit('teacher_start_exam', { quiz_id: quizId });
-            // Start local dashboard timer visual
-            startDashboardTimer();
+      if (confirm("Launch the exam for all students in the waiting room?")) {
+        socket.emit('teacher_start_exam', { quiz_id: quizId });
+        const duration = {{ quiz.duration_minutes | default(30) }};
+        if (!timerRunning) startTimer(duration * 60);
+      }
+    }
+
+    function startTimer(totalSeconds) {
+      timerRunning = true;
+      const el = document.getElementById('global-timer');
+      const interval = setInterval(() => {
+        if (totalSeconds <= 0) { clearInterval(interval); el.textContent = '00:00'; return; }
+        const m = Math.floor(totalSeconds / 60);
+        const s = totalSeconds % 60;
+        el.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        if (totalSeconds <= 300) el.style.color = '#f59e0b';
+        if (totalSeconds <= 60) el.style.color = '#ef4444';
+        totalSeconds--;
+      }, 1000);
+    }
+
+    function addAlert(name, reason) {
+      const ticker = document.getElementById('alert-ticker');
+      const item = document.createElement('div');
+      item.className = 'alert-item';
+      item.innerHTML = `
+        <div class="alert-icon">⚠️</div>
+        <div>
+          <div class="alert-name">${name}</div>
+          <div class="alert-reason">${reason}</div>
+        </div>`;
+      ticker.appendChild(item);
+      setTimeout(() => {
+        item.style.transition = 'opacity 0.5s, transform 0.5s';
+        item.style.opacity = '0';
+        item.style.transform = 'translateX(20px)';
+        setTimeout(() => item.remove(), 500);
+      }, 8000);
+    }
+
+    // --- Live violation update: update row + stats ---
+    socket.on('monitor_update', (data) => {
+      addAlert(data.name, data.reason);
+
+      // Update security flags stat
+      const flagEl = document.getElementById('stat-flags');
+      if (flagEl) flagEl.textContent = parseInt(flagEl.textContent) + 1;
+
+      // Find the student row and update violation count + status
+      const studentId = studentNameMap[data.name];
+      if (studentId) {
+        const row = document.getElementById(`row-${studentId}`);
+        if (row) {
+          // Update violation count cell (5th column, index 4)
+          const violationCell = row.querySelectorAll('td')[4];
+          if (violationCell) {
+            const cellDiv = violationCell.querySelector('.violation-cell');
+            if (cellDiv) {
+              // Parse existing count or start from 0
+              const currentText = cellDiv.textContent.trim();
+              let currentCount = 0;
+              const match = currentText.match(/(\d+)/);
+              if (match) currentCount = parseInt(match[1]);
+              const newCount = currentCount + 1;
+              cellDiv.textContent = `${newCount} Flag(s)`;
+              cellDiv.className = 'violation-cell has-violations';
+            }
+          }
+
+          // Update status badge to violation state
+          const statusCell = row.querySelectorAll('td')[1];
+          if (statusCell) {
+            statusCell.innerHTML = `<span class="status-badge badge-waiting">⚠ Violation</span>`;
+          }
         }
-    }
-    
-    // Simple visual timer for dashboard
-    function startDashboardTimer() {
-        let duration = 30 * 60;
-        const display = document.getElementById('global-timer');
-        setInterval(() => {
-            let m = Math.floor(duration / 60);
-            let s = duration % 60;
-            display.textContent = `${m}:${s < 10 ? '0'+s : s}`;
-            duration--;
-        }, 1000);
-    }
+      }
+    });
 
-    socket.on('receive_justification', () => location.reload());
-    socket.on('student_completed', () => location.reload());
+    // --- Justification received: show Approve/Deny buttons ---
+    socket.on('receive_justification', (data) => {
+      const name = data.name || 'Student';
+      addAlert(name, `Justification: "${data.msg || 'No message'}"`);
 
-</script>
+      // Find the student row and add approve/deny controls
+      const studentId = studentNameMap[name];
+      if (studentId) {
+        const ctrlCell = document.getElementById(`ctrl-${studentId}`);
+        if (ctrlCell) {
+          ctrlCell.innerHTML = `
+            <button onclick="approveStudent('${studentId}', '${name}')" class="btn-approve">🔓 Approve</button>
+            <button onclick="denyStudent('${studentId}', '${name}')" class="btn-deny">❌ Deny</button>
+          `;
+        }
+      }
+    });
+
+    socket.on('student_completed', () => {
+      const doneEl = document.getElementById('stat-done');
+      if (doneEl) doneEl.textContent = parseInt(doneEl.textContent) + 1;
+    });
+  </script>
 </body>
 </html>

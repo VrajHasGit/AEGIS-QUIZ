@@ -1,104 +1,269 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Join AegisQuiz | Secure Entrance</title>
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-    />
-    <style>
-      :root {
-        --bg: #0f172a;
-        --card: #1e293b;
-        --accent: #3b82f6;
-        --text: #f8fafc;
-      }
-      body {
-        background-color: var(--bg);
-        color: var(--text);
-        min-height: 100vh;
-        display: flex;
-        align-items: center;
-        font-family: "Inter", sans-serif;
-      }
-      .join-card {
-        background: var(--card);
-        border: 1px solid #334155;
-        border-radius: 20px;
-        padding: 40px;
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
-      }
-      .form-label {
-        color: var(--text) !important;
-        font-weight: 600;
-        font-size: 1rem;
-        margin-bottom: 8px;
-      }
-      .form-control {
-        background: #0f172a !important;
-        border: 2px solid #334155 !important;
-        color: white !important;
-        padding: 12px;
-        transition: 0.3s;
-      }
-      .form-control:focus {
-        border-color: var(--accent) !important;
-        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
-      }
-      .btn-join {
-        background: var(--accent);
-        border: none;
-        padding: 14px;
-        font-weight: 700;
-        border-radius: 12px;
-        transition: 0.3s;
-      }
-      .btn-join:hover {
-        background: #2563eb;
-        transform: translateY(-2px);
-      }
-    </style>
-  </head>
-  <body>
-    <div class="container">
-      <div class="row justify-content-center">
-        <div class="col-md-5">
-          <div class="join-card text-center">
-            <img
-              src="https://img.icons8.com/fluency/96/shield.png"
-              class="mb-3"
-              width="60"
-            />
-            <h2 class="fw-bold mb-4">Join AegisQuiz</h2>
-            <form action="/student/join" method="POST" class="text-start">
-              <div class="mb-3">
-                <label class="form-label">Exam Access Code</label>
-                <input
-                  type="text"
-                  name="code"
-                  class="form-control"
-                  placeholder="E.G. F9162B4A"
-                  required
-                />
-              </div>
-              <div class="mb-4">
-                <label class="form-label">Full Name</label>
-                <input
-                  type="text"
-                  name="name"
-                  class="form-control"
-                  placeholder="Your Name"
-                  required
-                />
-              </div>
-              <button type="submit" class="btn btn-primary btn-join w-100">
-                Enter Waiting Room
-              </button>
-            </form>
-          </div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Join AegisQuiz | Secure Entrance</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #060b18;
+      --surface: rgba(15, 23, 42, 0.8);
+      --border: rgba(99, 120, 180, 0.2);
+      --accent: #4f7ef8;
+      --accent-glow: rgba(79, 126, 248, 0.4);
+      --text: #f1f5f9;
+      --muted: #64748b;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(80px);
+      pointer-events: none;
+    }
+    .orb-1 {
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(79,126,248,0.15) 0%, transparent 70%);
+      top: -150px; right: -100px;
+      animation: floatOrb 14s ease-in-out infinite;
+    }
+    .orb-2 {
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(16,185,129,0.1) 0%, transparent 70%);
+      bottom: -100px; left: -100px;
+      animation: floatOrb 10s ease-in-out infinite reverse;
+    }
+    @keyframes floatOrb {
+      0%, 100% { transform: translate(0, 0); }
+      50% { transform: translate(20px, -20px); }
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(79, 126, 248, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(79, 126, 248, 0.03) 1px, transparent 1px);
+      background-size: 50px 50px;
+      pointer-events: none;
+    }
+
+    .join-wrapper {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 460px;
+      padding: 20px;
+      animation: slideUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .brand-badge { text-align: center; margin-bottom: 32px; }
+    .shield-icon {
+      width: 64px; height: 64px;
+      background: linear-gradient(135deg, #4f7ef8, #10b981);
+      border-radius: 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      box-shadow: 0 0 30px rgba(79,126,248,0.3);
+      margin-bottom: 16px;
+    }
+    .brand-title { font-size: 1.8rem; font-weight: 800; color: var(--text); letter-spacing: -0.5px; }
+    .brand-title span { color: var(--accent); }
+    .brand-sub { font-size: 0.85rem; color: var(--muted); margin-top: 4px; }
+
+    .join-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 36px;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 25px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+
+    .card-heading {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 28px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .card-heading::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    .field-group { margin-bottom: 20px; }
+    .field-label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+    .field-input {
+      width: 100%;
+      background: rgba(255,255,255,0.04);
+      border: 1.5px solid rgba(99, 120, 180, 0.2);
+      border-radius: 12px;
+      padding: 13px 16px;
+      color: var(--text);
+      font-size: 0.95rem;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      transition: border-color 0.25s, box-shadow 0.25s, background 0.25s;
+    }
+    .field-input::placeholder { color: rgba(100,116,139,0.6); }
+    .field-input:focus {
+      border-color: var(--accent);
+      background: rgba(79,126,248,0.05);
+      box-shadow: 0 0 0 4px rgba(79,126,248,0.12);
+    }
+
+    /* Code input special styling */
+    .code-input {
+      font-size: 1.4rem !important;
+      font-weight: 700 !important;
+      letter-spacing: 6px;
+      text-align: center;
+      text-transform: uppercase;
+      font-family: 'Inter', monospace !important;
+    }
+
+    .btn-join {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #4f7ef8, #10b981);
+      border: none;
+      border-radius: 12px;
+      color: white;
+      font-size: 0.95rem;
+      font-weight: 700;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
+      margin-top: 8px;
+      letter-spacing: 0.5px;
+    }
+    .btn-join:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(79,126,248,0.4);
+    }
+    .btn-join:active { transform: translateY(0); }
+
+    .info-strip {
+      margin-top: 24px;
+      padding: 14px 16px;
+      background: rgba(79,126,248,0.08);
+      border: 1px solid rgba(79,126,248,0.2);
+      border-radius: 12px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 0.82rem;
+      color: rgba(148,163,184,0.9);
+      line-height: 1.5;
+    }
+    .info-strip span { font-size: 1rem; margin-top: 1px; }
+
+    .teacher-link {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    .teacher-link a {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .teacher-link a:hover { color: #7aa3ff; }
+  </style>
+</head>
+<body>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <div class="join-wrapper">
+    <div class="brand-badge">
+      <div class="shield-icon">🛡️</div>
+      <div class="brand-title">Aegis<span>Quiz</span></div>
+      <div class="brand-sub">Secure Student Entrance</div>
+    </div>
+
+    <div class="join-card">
+      <div class="card-heading">Join Exam</div>
+
+      <form action="/student/join" method="POST">
+        <div class="field-group">
+          <label class="field-label" for="code">Exam Access Code</label>
+          <input
+            type="text"
+            id="code"
+            name="code"
+            class="field-input code-input"
+            placeholder="F9162B4A"
+            required
+            maxlength="8"
+            autocomplete="off"
+          />
         </div>
+        <div class="field-group">
+          <label class="field-label" for="name">Full Name</label>
+          <input
+            type="text"
+            id="name"
+            name="name"
+            class="field-input"
+            placeholder="Your full name"
+            required
+          />
+        </div>
+        <button type="submit" class="btn-join">Enter Waiting Room →</button>
+      </form>
+
+      <div class="info-strip">
+        <span>ℹ️</span>
+        <div>Full-screen mode will be enforced once the exam begins. Leaving the exam window will be flagged as a security violation.</div>
       </div>
     </div>
-  </body>
+
+    <div class="teacher-link">
+      Are you a teacher? <a href="/">Sign in here</a>
+    </div>
+  </div>
+
+  <script>
+    // Auto-uppercase the code input
+    document.getElementById('code').addEventListener('input', function() {
+      this.value = this.value.toUpperCase();
+    });
+  </script>
+</body>
 </html>

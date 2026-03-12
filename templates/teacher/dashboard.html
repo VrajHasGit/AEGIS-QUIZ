@@ -1,248 +1,482 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AegisQuiz | Teacher Dashboard</title>
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-    />
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-    <style>
-      :root {
-        --primary-dark: #1a1a2e;
-        --accent-blue: #3f51b5;
-      }
-      body {
-        background-color: #f8f9fa;
-      }
-      .navbar {
-        background-color: var(--primary-dark);
-      }
-      .card {
-        border: none;
-        border-radius: 12px;
-        transition: transform 0.2s;
-      }
-      .card:hover {
-        transform: translateY(-5px);
-      }
-      .btn-primary {
-        background-color: var(--accent-blue);
-        border: none;
-      }
-      .user-icon {
-        vertical-align: middle;
-        margin-right: 8px;
-      }
-    </style>
-  </head>
-  <body>
-    <nav class="navbar navbar-dark shadow-sm">
-      <div class="container">
-        <a class="navbar-brand d-flex align-items-center" href="#">
-          <span style="font-size: 1.5rem; margin-right: 10px">🛡️</span>
-          <strong>AegisQuiz</strong>
-        </a>
-        <div class="navbar-text d-flex align-items-center text-white">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="22"
-            height="22"
-            fill="currentColor"
-            class="bi bi-person-circle user-icon"
-            viewBox="0 0 16 16"
-          >
-            <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" />
-            <path
-              fill-rule="evenodd"
-              d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1z"
-            />
-          </svg>
-          <span class="me-3"
-            >Welcome, <strong>{{ session['teacher_name'] }}</strong></span
-          >
-          <a href="/logout" class="btn btn-sm btn-outline-danger">Logout</a>
-        </div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AegisQuiz | Teacher Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #060b18;
+      --surface: rgba(15, 23, 42, 0.85);
+      --surface-2: rgba(22, 33, 62, 0.6);
+      --border: rgba(99, 120, 180, 0.15);
+      --accent: #4f7ef8;
+      --text: #f1f5f9;
+      --muted: #64748b;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      min-height: 100vh;
+      color: var(--text);
+      position: relative;
+    }
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(79,126,248,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(79,126,248,0.03) 1px, transparent 1px);
+      background-size: 50px 50px; pointer-events: none;
+    }
+
+    /* ===== NAVBAR ===== */
+    .navbar {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(6,11,24,0.9);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(20px);
+      padding: 0 24px;
+      height: 64px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      display: flex; align-items: center; gap: 10px;
+      text-decoration: none;
+    }
+    .brand-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, var(--accent), #7c3aed);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+    }
+    .brand-name { font-size: 1.1rem; font-weight: 800; color: var(--text); }
+    .brand-name span { color: var(--accent); }
+
+    .nav-right { display: flex; align-items: center; gap: 12px; }
+    .nav-teacher {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.88rem; color: var(--muted);
+    }
+    .nav-teacher strong { color: var(--text); font-weight: 600; }
+    .avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), #7c3aed);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.8rem; font-weight: 700; color: white;
+    }
+    .btn-logout {
+      padding: 7px 14px; border-radius: 8px;
+      background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25);
+      color: #fca5a5; font-size: 0.82rem; font-weight: 600;
+      text-decoration: none; transition: all 0.2s; font-family: 'Inter', sans-serif;
+    }
+    .btn-logout:hover { background: rgba(239,68,68,0.2); color: white; }
+
+    /* ===== MAIN CONTENT ===== */
+    .main { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
+
+    .page-header { margin-bottom: 32px; }
+    .page-title { font-size: 1.8rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 4px; }
+    .page-sub { font-size: 0.9rem; color: var(--muted); }
+
+    /* Create cards */
+    .create-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 40px; }
+
+    .create-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px; padding: 28px;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      display: flex; flex-direction: column;
+      transition: transform 0.25s, box-shadow 0.25s;
+      animation: slideUp 0.5s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    .create-card:hover { transform: translateY(-4px); box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+    .create-card:nth-child(2) { animation-delay: 0.1s; }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .card-icon-wrap {
+      width: 48px; height: 48px; border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; margin-bottom: 16px;
+    }
+    .icon-ai { background: linear-gradient(135deg, rgba(79,126,248,0.2), rgba(124,58,237,0.2)); }
+    .icon-manual { background: linear-gradient(135deg, rgba(16,185,129,0.2), rgba(5,150,105,0.2)); }
+
+    .card-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 6px; }
+    .card-desc { font-size: 0.85rem; color: var(--muted); line-height: 1.6; margin-bottom: 24px; flex: 1; }
+
+    .card-fields { margin-bottom: 16px; }
+    .field-label {
+      display: block; font-size: 0.75rem; font-weight: 600;
+      color: var(--muted); text-transform: uppercase; letter-spacing: 1px;
+      margin-bottom: 6px;
+    }
+    .field-row { display: flex; gap: 10px; margin-bottom: 12px; }
+    .field-input {
+      flex: 1; background: rgba(255,255,255,0.04);
+      border: 1.5px solid var(--border);
+      border-radius: 10px; padding: 10px 14px;
+      color: var(--text); font-family: 'Inter', sans-serif; font-size: 0.875rem;
+      outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .field-input::placeholder { color: rgba(100,116,139,0.6); }
+    .field-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,126,248,0.12); }
+    .field-input.small { width: 100px; flex: none; }
+
+    .btn-ai {
+      width: 100%; padding: 12px;
+      background: linear-gradient(135deg, var(--accent), #7c3aed);
+      border: none; border-radius: 12px;
+      color: white; font-family: 'Inter', sans-serif;
+      font-size: 0.9rem; font-weight: 700; cursor: pointer;
+      transition: all 0.3s; letter-spacing: 0.3px;
+    }
+    .btn-ai:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(79,126,248,0.4); }
+    .btn-ai:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .btn-manual {
+      width: 100%; padding: 12px;
+      background: linear-gradient(135deg, var(--success), #059669);
+      border: none; border-radius: 12px;
+      color: white; font-family: 'Inter', sans-serif;
+      font-size: 0.9rem; font-weight: 700; cursor: pointer;
+      text-decoration: none; display: block; text-align: center;
+      transition: all 0.3s;
+    }
+    .btn-manual:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(16,185,129,0.4); color: white; }
+
+    /* Quizzes Table */
+    .quiz-table-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px; overflow: hidden;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      animation: slideUp 0.5s cubic-bezier(0.22,1,0.36,1) 0.2s both;
+    }
+
+    .table-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .table-title { font-size: 0.9rem; font-weight: 700; color: var(--text); }
+    .table-count {
+      font-size: 0.8rem; color: var(--muted);
+      background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+      border-radius: 100px; padding: 3px 10px;
+    }
+
+    table { width: 100%; border-collapse: collapse; }
+    thead th {
+      padding: 14px 24px; text-align: left;
+      font-size: 0.7rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 1.5px;
+      color: var(--muted); border-bottom: 1px solid var(--border);
+    }
+    tbody tr {
+      border-bottom: 1px solid rgba(99,120,180,0.08);
+      transition: background 0.15s;
+    }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: rgba(255,255,255,0.02); }
+    tbody td { padding: 16px 24px; font-size: 0.9rem; vertical-align: middle; }
+
+    .quiz-title-cell { font-weight: 600; color: var(--text); }
+    .access-code {
+      font-family: monospace; font-size: 0.95rem; font-weight: 700;
+      color: var(--accent); letter-spacing: 2px;
+      background: rgba(79,126,248,0.08); border: 1px solid rgba(79,126,248,0.2);
+      border-radius: 8px; padding: 4px 10px; display: inline-block;
+    }
+
+    .badge {
+      padding: 4px 12px; border-radius: 100px;
+      font-size: 0.75rem; font-weight: 600; display: inline-block;
+    }
+    .badge-students {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid var(--border); color: var(--muted);
+    }
+
+    .btn-delete {
+      padding: 8px 16px; border-radius: 9px;
+      background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25);
+      color: #fca5a5; font-family: 'Inter', sans-serif;
+      font-size: 0.8rem; font-weight: 700; cursor: pointer;
+      transition: all 0.25s;
+    }
+    .btn-delete:hover { background: rgba(239,68,68,0.2); color: white; }
+
+    .btn-confirm-delete {
+      padding: 8px 16px; border-radius: 9px;
+      background: linear-gradient(135deg, #ef4444, #dc2626); border: none;
+      color: white; font-family: 'Inter', sans-serif;
+      font-size: 0.8rem; font-weight: 700; cursor: pointer;
+      transition: all 0.25s; animation: fadeIn 0.2s ease;
+    }
+    .btn-cancel-delete {
+      padding: 8px 12px; border-radius: 9px;
+      background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+      color: var(--muted); font-family: 'Inter', sans-serif;
+      font-size: 0.8rem; font-weight: 600; cursor: pointer;
+      transition: all 0.2s; animation: fadeIn 0.2s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    .action-btns { display: flex; gap: 8px; }
+    .btn-start {
+      padding: 8px 16px; border-radius: 9px; border: none;
+      background: linear-gradient(135deg, var(--success), #059669);
+      color: white; font-family: 'Inter', sans-serif;
+      font-size: 0.8rem; font-weight: 700; cursor: pointer;
+      transition: all 0.25s;
+    }
+    .btn-start:hover { transform: translateY(-1px); box-shadow: 0 5px 15px rgba(16,185,129,0.4); }
+
+    .btn-monitor {
+      padding: 8px 16px; border-radius: 9px;
+      background: rgba(79,126,248,0.1); border: 1px solid rgba(79,126,248,0.3);
+      color: var(--accent); font-family: 'Inter', sans-serif;
+      font-size: 0.8rem; font-weight: 700; text-decoration: none;
+      transition: all 0.25s; display: inline-block;
+    }
+    .btn-monitor:hover { background: rgba(79,126,248,0.2); color: var(--accent); }
+
+    .empty-state {
+      text-align: center; padding: 60px 24px; color: var(--muted);
+    }
+    .empty-icon { font-size: 3rem; margin-bottom: 12px; opacity: 0.5; }
+    .empty-text { font-size: 0.9rem; }
+
+    /* Toast notification */
+    .toast {
+      position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+      background: rgba(15,23,42,0.97); border: 1px solid var(--border);
+      border-radius: 14px; padding: 16px 20px;
+      font-size: 0.88rem; color: var(--text); max-width: 320px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+      transform: translateX(120%); transition: transform 0.4s cubic-bezier(0.22,1,0.36,1);
+      backdrop-filter: blur(20px);
+    }
+    .toast.show { transform: translateX(0); }
+    .toast-title { font-weight: 700; margin-bottom: 4px; }
+    .toast-body { color: var(--muted); font-size: 0.82rem; }
+
+    @media (max-width: 640px) {
+      .create-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <a href="#" class="nav-brand">
+      <div class="brand-icon">🛡️</div>
+      <span class="brand-name">Aegis<span>Quiz</span></span>
+    </a>
+    <div class="nav-right">
+      <div class="nav-teacher">
+        <div class="avatar">{{ session['teacher_name'][0] | upper }}</div>
+        <span>Welcome, <strong>{{ session['teacher_name'] }}</strong></span>
       </div>
-    </nav>
+      <a href="/logout" class="btn-logout">Logout</a>
+    </div>
+  </nav>
 
-    <div class="container mt-5">
-      <div class="row g-4">
-        <div class="col-md-6">
-          <div class="card shadow-sm h-100 p-3">
-            <div class="card-body text-center d-flex flex-column">
-              <h3 class="card-title fw-bold">Magic AI Builder</h3>
-              <p class="text-muted">
-                Generate a complete, secure quiz in seconds using Gemini AI.
-              </p>
-              <div class="mt-auto text-start">
-                <div class="mb-3">
-                  <label class="form-label fw-semibold">Topic</label>
-                  <input
-                    type="text"
-                    id="ai-topic"
-                    class="form-control"
-                    placeholder="e.g. Quantum Physics"
-                  />
-                </div>
-                <div class="mb-3">
-                  <label class="form-label fw-semibold"
-                    >Number of Questions</label
-                  >
-                  <input
-                    type="number"
-                    id="ai-count"
-                    class="form-control"
-                    value="5"
-                    min="1"
-                    max="20"
-                  />
-                </div>
-                <button
-                  id="ai-btn"
-                  onclick="generateAIQuiz()"
-                  class="btn btn-primary w-100 py-2"
-                >
-                  ✨ Generate with AI
-                </button>
-              </div>
+  <div class="main">
+    <div class="page-header">
+      <div class="page-title">Teacher Dashboard</div>
+      <div class="page-sub">Create, manage and monitor your secure quizzes</div>
+    </div>
+
+    <!-- Create Options -->
+    <div class="create-grid">
+      <!-- AI Builder -->
+      <div class="create-card">
+        <div class="card-icon-wrap icon-ai">✨</div>
+        <div class="card-title">Magic AI Builder</div>
+        <div class="card-desc">Generate a complete, secure quiz in seconds using Gemini AI. Just enter a topic and click generate.</div>
+        <div class="card-fields">
+          <div class="field-row">
+            <div style="flex:1">
+              <label class="field-label">Topic</label>
+              <input type="text" id="ai-topic" class="field-input" placeholder="e.g. Quantum Physics" />
+            </div>
+            <div>
+              <label class="field-label">Questions</label>
+              <input type="number" id="ai-count" class="field-input small" value="5" min="1" max="20" />
+            </div>
+            <div>
+              <label class="field-label">Duration (min)</label>
+              <input type="number" id="ai-duration" class="field-input small" value="30" min="1" />
             </div>
           </div>
         </div>
-
-        <div class="col-md-6">
-          <div class="card shadow-sm h-100 p-3">
-            <div class="card-body text-center d-flex flex-column">
-              <h3 class="card-title fw-bold">Manual Builder</h3>
-              <p class="text-muted">
-                Hand-craft your own questions for 100% curriculum control.
-              </p>
-              <div class="mt-auto">
-                <p class="py-4 text-secondary">
-                  Set custom distractors, upload images, and verify every answer
-                  personally.
-                </p>
-                <a
-                  href="/teacher/create-manual"
-                  class="btn btn-primary w-100 py-2"
-                  >📝 Create Manually</a
-                >
-              </div>
-            </div>
-          </div>
-        </div>
+        <button id="ai-btn" onclick="generateAIQuiz()" class="btn-ai">✨ Generate with AI</button>
       </div>
 
-      <div class="row mt-5 mb-5">
-        <div class="col-12">
-          <div class="card shadow-sm">
-            <div class="card-header bg-white py-3">
-              <h5 class="mb-0 fw-bold text-dark">Your Published Quizzes</h5>
-            </div>
-            <div class="card-body">
-              <div class="table-responsive">
-                <table class="table align-middle">
-                  <thead class="table-light">
-                    <tr>
-                      <th>Quiz Name</th>
-                      <th>Access Code</th>
-                      <th>Status</th>
-                      <th class="text-center">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody id="quiz-list">
-                    {% if quizzes %} {% for quiz in quizzes %}
-                    <tr>
-                      <td>{{ quiz.title }}</td>
-                      <td>
-                        <code class="fw-bold text-primary"
-                          >{{ quiz.access_code }}</code
-                        >
-                      </td>
-                      <td>
-                        <span class="badge bg-secondary"
-                          >{{ quiz.student_count }} Students</span
-                        >
-                      </td>
-
-                      <td class="text-center">
-                        <button
-                          onclick="startExam('{{ quiz.id }}')"
-                          class="btn btn-success btn-sm"
-                        >
-                          🚀 Start
-                        </button>
-                        <a
-                          href="/teacher/monitor/{{ quiz.id }}"
-                          class="btn btn-info btn-sm text-white"
-                          >📊 Monitor</a
-                        >
-                      </td>
-                    </tr>
-                    {% endfor %} {% else %}
-                    <tr>
-                      <td colspan="4" class="text-center text-muted py-4">
-                        No quizzes generated yet. Try the Magic AI Builder!
-                      </td>
-                    </tr>
-                    {% endif %}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
+      <!-- Manual Builder -->
+      <div class="create-card">
+        <div class="card-icon-wrap icon-manual">📝</div>
+        <div class="card-title">Manual Builder</div>
+        <div class="card-desc">Hand-craft every question for 100% curriculum control. Set custom options and verify every answer personally.</div>
+        <div class="card-desc" style="flex: 1;"></div>
+        <a href="/teacher/create-manual" class="btn-manual">📝 Create Manually</a>
       </div>
     </div>
 
-    <script>
-      const socket = io();
+    <!-- Quiz Table -->
+    <div class="quiz-table-section">
+      <div class="table-header">
+        <div class="table-title">Published Quizzes</div>
+        <div class="table-count">{{ quizzes | length }} total</div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Quiz Name</th>
+            <th>Access Code</th>
+            <th>Students</th>
+            <th style="text-align:right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if quizzes %}
+            {% for quiz in quizzes %}
+            <tr id="quiz-row-{{ quiz.id }}">
+              <td class="quiz-title-cell">{{ quiz.title }}</td>
+              <td><span class="access-code">{{ quiz.access_code }}</span></td>
+              <td><span class="badge badge-students">{{ quiz.student_count }} students</span></td>
+              <td>
+                <div class="action-btns" style="justify-content:flex-end;">
+                  <button onclick="startExam('{{ quiz.id }}')" class="btn-start">🚀 Start</button>
+                  <a href="/teacher/monitor/{{ quiz.id }}" class="btn-monitor">📊 Monitor</a>
+                  <span id="delete-wrap-{{ quiz.id }}">
+                    <button onclick="confirmDelete('{{ quiz.id }}')" class="btn-delete">🗑️ Delete</button>
+                  </span>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          {% else %}
+          <tr>
+            <td colspan="4">
+              <div class="empty-state">
+                <div class="empty-icon">📋</div>
+                <div class="empty-text">No quizzes yet. Create your first quiz above!</div>
+              </div>
+            </td>
+          </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
 
-      async function generateAIQuiz() {
-        const topic = document.getElementById("ai-topic").value;
-        const count = document.getElementById("ai-count").value;
-        const btn = document.getElementById("ai-btn");
+  <!-- Toast -->
+  <div class="toast" id="toast">
+    <div class="toast-title" id="toast-title"></div>
+    <div class="toast-body" id="toast-body"></div>
+  </div>
 
-        if (!topic) return alert("Please enter a topic!");
+  <script>
+    const socket = io();
 
-        btn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> Generating...`;
-        btn.disabled = true;
+    function showToast(title, body, duration = 4000) {
+      const t = document.getElementById('toast');
+      document.getElementById('toast-title').innerText = title;
+      document.getElementById('toast-body').innerText = body;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), duration);
+    }
 
-        try {
-          const response = await fetch("/api/generate", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ topic: topic, num_questions: count }),
-          });
-
-          const result = await response.json();
-
-          if (response.ok && result.status === "success") {
-            alert("Success! Quiz generated.");
-            location.reload();
-          } else {
-            // This will now show the ACTUAL error from Python
-            alert(
-              "Server Error: " + (result.message || "Unknown Server Error")
-            );
-          }
-        } catch (err) {
-          alert("Connection Failed: Check if your Python terminal is running.");
-        } finally {
-          btn.innerHTML = "✨ Generate with AI";
-          btn.disabled = false;
+    async function generateAIQuiz() {
+      const topic = document.getElementById("ai-topic").value;
+      const count = document.getElementById("ai-count").value;
+      const duration = document.getElementById("ai-duration").value || 30;
+      const btn = document.getElementById("ai-btn");
+      if (!topic) { showToast("⚠️ Missing Topic", "Please enter a topic for the quiz."); return; }
+      btn.innerHTML = `<span style="display:inline-flex; align-items:center; gap:8px;"><svg style="animation:spin 0.8s linear infinite; width:14px; height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Generating...</span>`;
+      btn.disabled = true;
+      try {
+        const res = await fetch("/api/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ topic, num_questions: count, duration: parseInt(duration) }),
+        });
+        const result = await res.json();
+        if (res.ok && result.status === "success") {
+          showToast("✅ Quiz Created!", `Access Code: ${result.code}`);
+          setTimeout(() => location.reload(), 2000);
+        } else {
+          showToast("❌ Error", result.message || "Unknown error");
         }
+      } catch {
+        showToast("❌ Connection Error", "Check that your Python server is running.");
+      } finally {
+        btn.innerHTML = "✨ Generate with AI";
+        btn.disabled = false;
       }
+    }
 
-      function startExam(quizId) {
-        // This emits to app.py, which tells all students in the room to go to /exam
-        socket.emit("teacher_start_exam", { quiz_id: quizId });
-        alert(
-          "Exam started! Students are now entering the secure environment."
-        );
+    function confirmDelete(quizId) {
+      const wrap = document.getElementById(`delete-wrap-${quizId}`);
+      wrap.innerHTML = `
+        <button onclick="deleteQuiz('${quizId}')" class="btn-confirm-delete">Confirm</button>
+        <button onclick="cancelDelete('${quizId}')" class="btn-cancel-delete">Cancel</button>
+      `;
+    }
+
+    function cancelDelete(quizId) {
+      const wrap = document.getElementById(`delete-wrap-${quizId}`);
+      wrap.innerHTML = `<button onclick="confirmDelete('${quizId}')" class="btn-delete">🗑️ Delete</button>`;
+    }
+
+    async function deleteQuiz(quizId) {
+      try {
+        const res = await fetch(`/api/quiz/${quizId}`, { method: 'DELETE' });
+        const result = await res.json();
+        if (res.ok && result.status === 'success') {
+          const row = document.getElementById(`quiz-row-${quizId}`);
+          if (row) {
+            row.style.transition = 'opacity 0.3s, transform 0.3s';
+            row.style.opacity = '0';
+            row.style.transform = 'translateX(-20px)';
+            setTimeout(() => row.remove(), 300);
+          }
+          showToast('🗑️ Quiz Deleted', 'The quiz and all associated data have been removed.');
+        } else {
+          showToast('❌ Error', result.message || 'Failed to delete quiz.');
+        }
+      } catch {
+        showToast('❌ Connection Error', 'Could not reach the server.');
       }
-    </script>
-  </body>
+    }
+
+    function startExam(quizId) {
+      socket.emit("teacher_start_exam", { quiz_id: quizId });
+      showToast("🚀 Exam Started!", "Students are now entering the secure exam environment.");
+    }
+
+    const style = document.createElement('style');
+    style.textContent = `@keyframes spin { to { transform: rotate(360deg); } }`;
+    document.head.appendChild(style);
+  </script>
+</body>
 </html>

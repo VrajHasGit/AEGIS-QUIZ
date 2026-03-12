@@ -13,6 +13,37 @@ app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY")
 socketio = SocketIO(app, cors_allowed_origins="*")
 
+# --- ERROR HANDLERS ---
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('error.html',
+        error_code=404,
+        error_title='Page Not Found',
+        error_message='The page you are looking for does not exist or has been moved.',
+        action_url='/',
+        action_text='← Go Home'
+    ), 404
+
+@app.errorhandler(500)
+def internal_error(e):
+    return render_template('error.html',
+        error_code=500,
+        error_title='Internal Server Error',
+        error_message='Something went wrong on our end. Please try again later or contact your administrator.',
+        action_url='/',
+        action_text='← Go Home'
+    ), 500
+
+@app.errorhandler(403)
+def forbidden(e):
+    return render_template('error.html',
+        error_code=403,
+        error_title='Access Denied',
+        error_message='You do not have permission to access this resource.',
+        action_url='/',
+        action_text='← Go Home'
+    ), 403
+
 # --- Database Connection ---
 def get_db():
     return mysql.connector.connect(
@@ -38,7 +69,13 @@ def login():
     if teacher:
         session['teacher_id'], session['teacher_name'] = teacher['id'], teacher['username']
         return redirect(url_for('dashboard'))
-    return "Login Failed", 401
+    return render_template('error.html',
+            error_code=401,
+            error_title='Login Failed',
+            error_message='Invalid email or password. Please check your credentials and try again.',
+            action_url='/',
+            action_text='← Try Again'
+        ), 401
 
 @app.route('/dashboard')
 def dashboard():
@@ -70,14 +107,15 @@ def handle_ai_generation():
     try:
         data = request.json
         topic, count = data.get('topic'), data.get('num_questions')
+        duration = data.get('duration', 30)
         quiz_data = generate_quiz_data(topic, count)
         if not quiz_data: return jsonify({"status": "error", "message": "AI failed"}), 500
         
         db = get_db()
         cursor = db.cursor()
         access_code = str(uuid.uuid4())[:8].upper()
-        cursor.execute("INSERT INTO quizzes (teacher_id, title, topic, access_code) VALUES (%s, %s, %s, %s)",
-                       (session['teacher_id'], f"{topic} Quiz", topic, access_code))
+        cursor.execute("INSERT INTO quizzes (teacher_id, title, topic, access_code, duration_minutes) VALUES (%s, %s, %s, %s, %s)",
+                       (session['teacher_id'], f"{topic} Quiz", topic, access_code, duration))
         quiz_id = cursor.lastrowid
         
         for q in quiz_data:
@@ -90,6 +128,29 @@ def handle_ai_generation():
         return jsonify({"status": "success", "code": access_code})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+
+# --- DELETE QUIZ ---
+@app.route('/api/quiz/<int:quiz_id>', methods=['DELETE'])
+def delete_quiz(quiz_id):
+    if 'teacher_id' not in session:
+        return jsonify({"status": "error", "message": "Unauthorized"}), 401
+    
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    
+    # Verify teacher owns this quiz
+    cursor.execute("SELECT id FROM quizzes WHERE id = %s AND teacher_id = %s", (quiz_id, session['teacher_id']))
+    quiz = cursor.fetchone()
+    if not quiz:
+        return jsonify({"status": "error", "message": "Quiz not found or access denied"}), 404
+    
+    # Cascade delete: sessions → questions → quiz
+    cursor.execute("DELETE FROM exam_sessions WHERE quiz_id = %s", (quiz_id,))
+    cursor.execute("DELETE FROM questions WHERE quiz_id = %s", (quiz_id,))
+    cursor.execute("DELETE FROM quizzes WHERE id = %s", (quiz_id,))
+    db.commit()
+    
+    return jsonify({"status": "success", "message": "Quiz deleted"})
 
 @app.route('/teacher/create-manual', methods=['GET', 'POST'])
 def create_manual():
@@ -138,13 +199,13 @@ def monitor_quiz(quiz_id):
     db = get_db()
     cursor = db.cursor(dictionary=True)
     
-    # Get quiz details
-    cursor.execute("SELECT title, access_code FROM quizzes WHERE id = %s", (quiz_id,))
+    # Get quiz details including duration
+    cursor.execute("SELECT title, access_code, duration_minutes FROM quizzes WHERE id = %s", (quiz_id,))
     quiz = cursor.fetchone()
     
     # Get all student sessions for this quiz
     cursor.execute("""
-        SELECT student_name, status, score, violation_count 
+        SELECT id, student_name, status, score, violation_count 
         FROM exam_sessions 
         WHERE quiz_id = %s
     """, (quiz_id,))
@@ -183,7 +244,13 @@ def join_quiz():
             
             return redirect(url_for('waiting_room'))
         else:
-            return "Invalid Access Code! Please check with your teacher.", 403
+            return render_template('error.html',
+                error_code=403,
+                error_title='Invalid Access Code',
+                error_message='The access code you entered is invalid. Please check with your teacher and try again.',
+                action_url='/student/join',
+                action_text='← Try Again'
+            ), 403
             
     return render_template('student/join.html')
 
@@ -200,7 +267,13 @@ def exam_page():
     db = get_db()
     cursor = db.cursor(dictionary=True)
     
-    # 2. Fetch questions
+    # 2. Fetch quiz info (duration + title)
+    cursor.execute("SELECT title, duration_minutes FROM quizzes WHERE id = %s", (session.get('quiz_id'),))
+    quiz_info = cursor.fetchone()
+    quiz_duration = quiz_info.get('duration_minutes', 30) if quiz_info else 30
+    quiz_title = quiz_info.get('title', 'Exam') if quiz_info else 'Exam'
+    
+    # 3. Fetch questions
     cursor.execute("""
         SELECT id, question_text, option_a, option_b, option_c, option_d 
         FROM questions WHERE quiz_id = %s
@@ -208,11 +281,17 @@ def exam_page():
     
     questions = cursor.fetchall()
     
-    # 3. Handle empty quiz
+    # 4. Handle empty quiz
     if not questions:
-        return "Error: This quiz has no questions. Please contact your teacher.", 404
+        return render_template('error.html',
+            error_code=404,
+            error_title='No Questions Found',
+            error_message='This quiz has no questions. Please contact your teacher.',
+            action_url='/student/join',
+            action_text='← Back to Join'
+        ), 404
 
-    return render_template('student/quiz.html', questions=questions)
+    return render_template('student/quiz.html', questions=questions, quiz_duration=quiz_duration, quiz_title=quiz_title)
 
 # --- SUBMISSION & RESULTS ---
 @app.route('/submit_exam', methods=['POST'])
@@ -335,6 +414,21 @@ def handle_approval(data):
     # Signal the room, target the student
     emit('resume_exam', {'target_student': student_name}, to=quiz_id)
 
+@socketio.on('teacher_deny_resume')
+def handle_denial(data):
+    quiz_id = str(data.get('quiz_id'))
+    student_name = data.get('name')
+    
+    # Update exam session status to terminated
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("UPDATE exam_sessions SET status = 'terminated' WHERE quiz_id = %s AND student_name = %s",
+                   (data.get('quiz_id'), student_name))
+    db.commit()
+    
+    # Signal the student
+    emit('exam_terminated', {'target_student': student_name}, to=quiz_id)
+
 @socketio.on('submit_justification')
 def handle_justification(data):
     quiz_id = str(session.get('quiz_id'))
@@ -346,4 +440,4 @@ def logout():
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True)
+    socketio.run(app, debug=True, allow_unsafe_werkzeug=True)

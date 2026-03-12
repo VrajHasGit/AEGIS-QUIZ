@@ -1,217 +1,314 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Manual Quiz Builder | AegisQuiz</title>
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-    />
-    <style>
-      :root {
-        --primary-dark: #1a1a2e;
-        --accent-blue: #3f51b5;
-      }
-      body {
-        background-color: #f0f2f5;
-      }
-      .navbar {
-        background-color: var(--primary-dark);
-      }
-      .builder-card {
-        border-radius: 15px;
-        border: none;
-      }
-      .question-block {
-        background: #fff;
-        border-left: 5px solid var(--accent-blue);
-        transition: all 0.3s ease;
-      }
-      .question-block:hover {
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-      }
-      .btn-add {
-        border: 2px dashed var(--accent-blue);
-        color: var(--accent-blue);
-        font-weight: bold;
-      }
-      .btn-add:hover {
-        background: var(--accent-blue);
-        color: white;
-      }
-    </style>
-  </head>
-  <body>
-    <nav class="navbar navbar-dark shadow-sm mb-4">
-      <div class="container">
-        <a class="navbar-brand" href="/dashboard">🛡️ AegisQuiz Builder</a>
-        <span class="text-white">Manual Mode</span>
-      </div>
-    </nav>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manual Quiz Builder | AegisQuiz</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #060b18;
+      --surface: rgba(15, 23, 42, 0.85);
+      --border: rgba(99, 120, 180, 0.15);
+      --accent: #4f7ef8;
+      --text: #f1f5f9;
+      --muted: #64748b;
+      --success: #10b981;
+    }
 
-    <div class="container pb-5">
-      <div class="row justify-content-center">
-        <div class="col-lg-9">
-          <form action="/teacher/create-manual" method="POST">
-            <div class="card builder-card shadow-sm mb-4">
-              <div class="card-body p-4">
-                <h4 class="mb-4 fw-bold">Quiz Information</h4>
-                <div class="row g-3">
-                  <div class="col-md-7">
-                    <label class="form-label fw-semibold">Quiz Title</label>
-                    <input
-                      type="text"
-                      name="quiz_title"
-                      class="form-control"
-                      placeholder="e.g. Midterm History Exam"
-                      required
-                    />
-                  </div>
-                  <div class="col-md-5">
-                    <label class="form-label fw-semibold">Topic</label>
-                    <input
-                      type="text"
-                      name="topic"
-                      class="form-control"
-                      placeholder="e.g. Ancient Rome"
-                      required
-                    />
-                  </div>
-                  <div class="mb-4">
-                    <label class="form-label fw-bold">Quiz Duration (Minutes)</label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-white border-secondary">⏱</span>
-                        <input type="number" name="duration" class="form-control bg-white text-dark border-secondary" 
-                               placeholder="e.g. 30" min="1" required>
-                        <span class="input-group-text bg-white border-secondary">min</span>
-                    </div>
-                    <div class="form-text text-muted">Auto-submits when time expires.</div>
-                  </div>
-                </div>
-              </div>
-            </div>
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      min-height: 100vh;
+      color: var(--text);
+      position: relative;
+    }
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(79,126,248,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(79,126,248,0.03) 1px, transparent 1px);
+      background-size: 50px 50px; pointer-events: none;
+    }
 
-            <div id="question-container">
-              <div
-                class="card builder-card shadow-sm mb-3 question-block p-4"
-                id="q-block-1"
-              >
-                <div class="d-flex justify-content-between">
-                  <h5 class="fw-bold text-primary">Question 1</h5>
-                </div>
-                <input
-                  type="text"
-                  name="question[]"
-                  class="form-control mb-3 mt-2"
-                  placeholder="Write your question here..."
-                  required
-                />
+    .navbar {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(6,11,24,0.9);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(20px);
+      padding: 0 24px; height: 64px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .brand-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, var(--accent), #7c3aed);
+      border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px;
+    }
+    .brand-name { font-size: 1.1rem; font-weight: 800; color: var(--text); }
+    .nav-tag {
+      font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;
+      color: var(--accent); background: rgba(79,126,248,0.1);
+      border: 1px solid rgba(79,126,248,0.25); border-radius: 100px; padding: 3px 10px;
+    }
 
-                <div class="row g-3">
-                  <div class="col-md-6">
-                    <div class="input-group">
-                      <span class="input-group-text bg-white">A</span>
-                      <input
-                        type="text"
-                        name="opt_a[]"
-                        class="form-control"
-                        placeholder="Option A"
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div class="col-md-6">
-                    <div class="input-group">
-                      <span class="input-group-text bg-white">B</span>
-                      <input
-                        type="text"
-                        name="opt_b[]"
-                        class="form-control"
-                        placeholder="Option B"
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div class="col-md-6">
-                    <div class="input-group">
-                      <span class="input-group-text bg-white">C</span>
-                      <input
-                        type="text"
-                        name="opt_c[]"
-                        class="form-control"
-                        placeholder="Option C"
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div class="col-md-6">
-                    <div class="input-group">
-                      <span class="input-group-text bg-white">D</span>
-                      <input
-                        type="text"
-                        name="opt_d[]"
-                        class="form-control"
-                        placeholder="Option D"
-                        required
-                      />
-                    </div>
-                  </div>
-                </div>
+    .main { max-width: 800px; margin: 0 auto; padding: 40px 24px 80px; }
 
-                <div class="mt-3">
-                  <label class="form-label fw-bold text-success"
-                    >Select Correct Answer</label
-                  >
-                  <select name="correct[]" class="form-select w-25">
-                    <option value="A">Option A</option>
-                    <option value="B">Option B</option>
-                    <option value="C">Option C</option>
-                    <option value="D">Option D</option>
-                  </select>
-                </div>
-              </div>
-            </div>
+    .page-header { margin-bottom: 32px; }
+    .page-title { font-size: 1.6rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 4px; }
+    .page-sub { font-size: 0.88rem; color: var(--muted); }
 
-            <div class="d-grid gap-2 mb-5">
-              <button
-                type="button"
-                class="btn btn-add py-3"
-                onclick="addQuestion()"
-              >
-                + Add Another Question
-              </button>
-              <button type="submit" class="btn btn-primary btn-lg py-3 shadow">
-                🚀 Publish Manual Quiz
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
+    /* Cards */
+    .builder-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px; padding: 28px;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      margin-bottom: 20px;
+      animation: slideUp 0.5s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .section-label {
+      font-size: 0.72rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 2px;
+      color: var(--muted); margin-bottom: 20px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    .field-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 14px; }
+    .field-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+    .field-group { display: flex; flex-direction: column; gap: 6px; }
+    .field-label {
+      font-size: 0.75rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 1px; color: var(--muted);
+    }
+    .field-input {
+      background: rgba(255,255,255,0.04);
+      border: 1.5px solid var(--border);
+      border-radius: 10px; padding: 10px 14px;
+      color: var(--text); font-family: 'Inter', sans-serif; font-size: 0.875rem;
+      outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+      width: 100%;
+    }
+    .field-input::placeholder { color: rgba(100,116,139,0.6); }
+    .field-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,126,248,0.12); }
+
+    /* Question block */
+    .question-block {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: 16px; padding: 24px;
+      margin-bottom: 16px;
+      animation: slideUp 0.4s cubic-bezier(0.22,1,0.36,1) both;
+      transition: box-shadow 0.2s;
+    }
+    .question-block:hover { box-shadow: 0 8px 30px rgba(0,0,0,0.3); }
+
+    .q-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 14px;
+    }
+    .q-label { font-size: 0.78rem; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 1.5px; }
+
+    .btn-remove {
+      width: 28px; height: 28px; border-radius: 7px;
+      background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2);
+      color: #fca5a5; font-size: 0.85rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
+    }
+    .btn-remove:hover { background: rgba(239,68,68,0.25); color: white; }
+
+    .q-input {
+      width: 100%; margin-bottom: 14px;
+    }
+
+    .correct-select {
+      background: rgba(255,255,255,0.04);
+      border: 1.5px solid var(--border);
+      border-radius: 10px; padding: 9px 14px;
+      color: var(--text); font-family: 'Inter', sans-serif; font-size: 0.875rem;
+      outline: none; cursor: pointer;
+      transition: border-color 0.2s;
+      margin-top: 12px;
+    }
+    .correct-select:focus { border-color: var(--success); }
+
+    /* Option inputs with letter badges */
+    .option-row {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+    }
+    .option-badge {
+      width: 28px; height: 28px; border-radius: 7px;
+      background: rgba(79,126,248,0.1); border: 1px solid rgba(79,126,248,0.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.78rem; font-weight: 700; color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    /* Bottom actions */
+    .bottom-actions {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
+      background: rgba(6,11,24,0.97);
+      border-top: 1px solid var(--border);
+      backdrop-filter: blur(20px);
+      padding: 16px 24px;
+    }
+    .actions-inner {
+      max-width: 800px; margin: 0 auto;
+      display: flex; gap: 12px;
+    }
+    .btn-add-q {
+      flex: 1; padding: 12px;
+      background: rgba(79,126,248,0.08);
+      border: 1.5px dashed rgba(79,126,248,0.3);
+      border-radius: 12px; color: var(--accent);
+      font-family: 'Inter', sans-serif; font-size: 0.9rem; font-weight: 600;
+      cursor: pointer; transition: all 0.25s;
+    }
+    .btn-add-q:hover { background: rgba(79,126,248,0.14); border-color: rgba(79,126,248,0.5); }
+
+    .btn-publish {
+      flex: 1; padding: 12px;
+      background: linear-gradient(135deg, var(--success), #059669);
+      border: none; border-radius: 12px;
+      color: white; font-family: 'Inter', sans-serif;
+      font-size: 0.9rem; font-weight: 700; cursor: pointer;
+      transition: all 0.3s;
+    }
+    .btn-publish:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(16,185,129,0.4); }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <a href="/dashboard" class="nav-brand">
+      <div class="brand-icon">🛡️</div>
+      <span class="brand-name">AegisQuiz</span>
+    </a>
+    <span class="nav-tag">Manual Builder</span>
+  </nav>
+
+  <div class="main">
+    <div class="page-header">
+      <div class="page-title">Create Manual Quiz</div>
+      <div class="page-sub">Hand-craft every question with full curriculum control</div>
     </div>
 
-    <script>
-      let questionCount = 1;
+    <form action="/teacher/create-manual" method="POST">
+      <!-- Quiz Info -->
+      <div class="builder-card">
+        <div class="section-label">Quiz Information</div>
+        <div class="field-grid" style="margin-bottom: 14px;">
+          <div class="field-group">
+            <label class="field-label">Quiz Title</label>
+            <input type="text" name="quiz_title" class="field-input" placeholder="e.g. Midterm History Exam" required />
+          </div>
+          <div class="field-group">
+            <label class="field-label">Topic</label>
+            <input type="text" name="topic" class="field-input" placeholder="e.g. Ancient Rome" required />
+          </div>
+          <div class="field-group">
+            <label class="field-label">Duration (min)</label>
+            <input type="number" name="duration" class="field-input" placeholder="30" min="1" required />
+          </div>
+        </div>
+      </div>
 
-      function addQuestion() {
-        questionCount++;
-        const container = document.getElementById("question-container");
-        const originalBlock = document.getElementById("q-block-1");
-        const newBlock = originalBlock.cloneNode(true);
+      <!-- Questions -->
+      <div id="question-container">
+        <div class="question-block" id="q-block-1">
+          <div class="q-header">
+            <span class="q-label">Question 1</span>
+          </div>
+          <input type="text" name="question[]" class="field-input q-input" placeholder="Write your question here..." required />
+          <div class="field-grid-2">
+            <div class="option-row">
+              <div class="option-badge">A</div>
+              <input type="text" name="opt_a[]" class="field-input" placeholder="Option A" required />
+            </div>
+            <div class="option-row">
+              <div class="option-badge">B</div>
+              <input type="text" name="opt_b[]" class="field-input" placeholder="Option B" required />
+            </div>
+            <div class="option-row">
+              <div class="option-badge">C</div>
+              <input type="text" name="opt_c[]" class="field-input" placeholder="Option C" required />
+            </div>
+            <div class="option-row">
+              <div class="option-badge">D</div>
+              <input type="text" name="opt_d[]" class="field-input" placeholder="Option D" required />
+            </div>
+          </div>
+          <select name="correct[]" class="correct-select">
+            <option value="A">✓ Correct Answer: A</option>
+            <option value="B">✓ Correct Answer: B</option>
+            <option value="C">✓ Correct Answer: C</option>
+            <option value="D">✓ Correct Answer: D</option>
+          </select>
+        </div>
+      </div>
 
-        // Update ID and Title
-        newBlock.id = `q-block-${questionCount}`;
-        newBlock.querySelector("h5").innerText = `Question ${questionCount}`;
+      <div style="height: 80px;"></div>
 
-        // Clear all input values
-        const inputs = newBlock.querySelectorAll("input");
-        inputs.forEach((input) => (input.value = ""));
+      <div class="bottom-actions">
+        <div class="actions-inner">
+          <button type="button" class="btn-add-q" onclick="addQuestion()">+ Add Question</button>
+          <button type="submit" class="btn-publish">🚀 Publish Quiz</button>
+        </div>
+      </div>
+    </form>
+  </div>
 
-        container.appendChild(newBlock);
+  <script>
+    let questionCount = 1;
 
-        // Smooth scroll to new question
-        newBlock.scrollIntoView({ behavior: "smooth" });
+    function addQuestion() {
+      questionCount++;
+      const container = document.getElementById("question-container");
+      const original = document.getElementById("q-block-1");
+      const newBlock = original.cloneNode(true);
+
+      newBlock.id = `q-block-${questionCount}`;
+      newBlock.querySelector(".q-label").innerText = `Question ${questionCount}`;
+      newBlock.querySelectorAll("input").forEach(i => i.value = "");
+
+      // Add remove button
+      const header = newBlock.querySelector(".q-header");
+      if (!header.querySelector('.btn-remove')) {
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'btn-remove';
+        removeBtn.innerHTML = '✕';
+        removeBtn.onclick = () => {
+          newBlock.style.transition = 'opacity 0.3s, transform 0.3s';
+          newBlock.style.opacity = '0';
+          newBlock.style.transform = 'translateY(-10px)';
+          setTimeout(() => { newBlock.remove(); renumberQuestions(); }, 300);
+        };
+        header.appendChild(removeBtn);
       }
-    </script>
-  </body>
+
+      container.appendChild(newBlock);
+      newBlock.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+
+    function renumberQuestions() {
+      document.querySelectorAll('.question-block').forEach((block, i) => {
+        block.querySelector('.q-label').innerText = `Question ${i + 1}`;
+      });
+      questionCount = document.querySelectorAll('.question-block').length;
+    }
+  </script>
+</body>
 </html>
