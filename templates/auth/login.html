@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AegisQuiz | Teacher Login</title>
+  <title>AegisQuiz | Teacher Portal</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
@@ -18,6 +18,7 @@
       --text: #f1f5f9;
       --muted: #64748b;
       --success: #10b981;
+      --danger: #ef4444;
     }
 
     body {
@@ -31,43 +32,32 @@
       position: relative;
     }
 
-    /* Animated background orbs */
-    .orb {
-      position: fixed;
-      border-radius: 50%;
-      filter: blur(80px);
+    /* Animated gradient background */
+    body::after {
+      content: '';
+      position: fixed; inset: 0;
+      background: linear-gradient(
+        135deg,
+        rgba(79,126,248,0.05) 0%,
+        rgba(124,58,237,0.05) 25%,
+        rgba(16,185,129,0.04) 50%,
+        rgba(245,158,11,0.03) 75%,
+        rgba(79,126,248,0.05) 100%
+      );
+      background-size: 400% 400%;
+      animation: gradientShift 15s ease infinite;
       pointer-events: none;
-      animation: floatOrb 12s ease-in-out infinite;
     }
-    .orb-1 {
-      width: 500px; height: 500px;
-      background: radial-gradient(circle, rgba(79,126,248,0.15) 0%, transparent 70%);
-      top: -150px; left: -150px;
-      animation-delay: 0s;
-    }
-    .orb-2 {
-      width: 400px; height: 400px;
-      background: radial-gradient(circle, rgba(139, 92, 246, 0.12) 0%, transparent 70%);
-      bottom: -100px; right: -100px;
-      animation-delay: -4s;
-    }
-    .orb-3 {
-      width: 300px; height: 300px;
-      background: radial-gradient(circle, rgba(16, 185, 129, 0.08) 0%, transparent 70%);
-      top: 50%; left: 60%;
-      animation-delay: -8s;
-    }
-    @keyframes floatOrb {
-      0%, 100% { transform: translate(0, 0) scale(1); }
-      33% { transform: translate(30px, -30px) scale(1.05); }
-      66% { transform: translate(-20px, 20px) scale(0.95); }
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
     }
 
     /* Grid overlay */
     body::before {
       content: '';
-      position: fixed;
-      inset: 0;
+      position: fixed; inset: 0;
       background-image:
         linear-gradient(rgba(79, 126, 248, 0.03) 1px, transparent 1px),
         linear-gradient(90deg, rgba(79, 126, 248, 0.03) 1px, transparent 1px);
@@ -75,11 +65,17 @@
       pointer-events: none;
     }
 
+    /* Particle Canvas */
+    #particles {
+      position: fixed; inset: 0; z-index: 1;
+      pointer-events: none;
+    }
+
     .login-wrapper {
       position: relative;
       z-index: 10;
       width: 100%;
-      max-width: 420px;
+      max-width: 440px;
       padding: 20px;
       animation: slideUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
     }
@@ -102,11 +98,11 @@
       font-size: 28px;
       box-shadow: 0 0 30px var(--accent-glow);
       margin-bottom: 16px;
-      animation: pulse 3s ease-in-out infinite;
+      animation: breathe 4s ease-in-out infinite;
     }
-    @keyframes pulse {
-      0%, 100% { box-shadow: 0 0 30px var(--accent-glow); }
-      50% { box-shadow: 0 0 50px var(--accent-glow), 0 0 80px rgba(79,126,248,0.2); }
+    @keyframes breathe {
+      0%, 100% { box-shadow: 0 0 30px var(--accent-glow); transform: scale(1) rotate(0deg); }
+      50% { box-shadow: 0 0 60px var(--accent-glow), 0 0 100px rgba(124,58,237,0.2); transform: scale(1.05) rotate(2deg); }
     }
     .brand-title {
       font-size: 1.8rem;
@@ -122,43 +118,86 @@
       font-weight: 400;
     }
 
+    /* Card with animated gradient border */
     .login-card {
+      position: relative;
       background: var(--surface);
-      border: 1px solid var(--border);
       border-radius: 24px;
       padding: 36px;
       backdrop-filter: blur(20px);
       box-shadow: 0 25px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+      overflow: hidden;
     }
-
-    .card-heading {
-      font-size: 1rem;
-      font-weight: 600;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      margin-bottom: 28px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .card-heading::after {
+    .login-card::before {
       content: '';
-      flex: 1;
-      height: 1px;
-      background: var(--border);
+      position: absolute; inset: -1px;
+      background: conic-gradient(
+        from var(--angle, 0deg),
+        transparent 0%,
+        rgba(79,126,248,0.5) 10%,
+        rgba(124,58,237,0.5) 20%,
+        transparent 30%,
+        transparent 70%,
+        rgba(16,185,129,0.4) 80%,
+        rgba(79,126,248,0.5) 90%,
+        transparent 100%
+      );
+      border-radius: 24px;
+      z-index: -1;
+      animation: rotateBorder 6s linear infinite;
+    }
+    @property --angle {
+      syntax: '<angle>';
+      initial-value: 0deg;
+      inherits: false;
+    }
+    @keyframes rotateBorder {
+      to { --angle: 360deg; }
+    }
+    .login-card::after {
+      content: '';
+      position: absolute; inset: 1px;
+      background: var(--surface);
+      border-radius: 23px;
+      z-index: -1;
     }
 
-    .field-group {
-      margin-bottom: 20px;
+    /* Tab Switcher */
+    .tab-switcher {
+      display: flex; gap: 0; margin-bottom: 28px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 12px; padding: 4px;
+      border: 1px solid var(--border);
     }
+    .tab-btn {
+      flex: 1; padding: 10px;
+      border: none; border-radius: 10px;
+      background: transparent;
+      color: var(--muted); font-family: 'Inter', sans-serif;
+      font-size: 0.85rem; font-weight: 600;
+      cursor: pointer; transition: all 0.3s;
+    }
+    .tab-btn.active {
+      background: linear-gradient(135deg, var(--accent), #7c3aed);
+      color: white;
+      box-shadow: 0 4px 15px rgba(79,126,248,0.3);
+    }
+    .tab-btn:not(.active):hover { color: var(--text); }
+
+    /* Form Panels */
+    .form-panel { display: none; animation: fadeSlide 0.35s cubic-bezier(0.22,1,0.36,1); }
+    .form-panel.active { display: block; }
+    @keyframes fadeSlide {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .field-group { margin-bottom: 20px; }
     .field-label {
       display: block;
-      font-size: 0.8rem;
-      font-weight: 600;
+      font-size: 0.8rem; font-weight: 600;
       color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 1px;
+      text-transform: uppercase; letter-spacing: 1px;
       margin-bottom: 8px;
     }
     .field-input {
@@ -180,7 +219,11 @@
       box-shadow: 0 0 0 4px rgba(79,126,248,0.12);
     }
 
-    .btn-login {
+    /* Password row */
+    .field-row { display: flex; gap: 12px; }
+    .field-row .field-group { flex: 1; }
+
+    .btn-primary {
       width: 100%;
       padding: 14px;
       background: linear-gradient(135deg, #4f7ef8, #6d48e5);
@@ -197,20 +240,39 @@
       margin-top: 8px;
       letter-spacing: 0.5px;
     }
-    .btn-login::before {
+    .btn-primary.register-btn {
+      background: linear-gradient(135deg, var(--success), #059669);
+    }
+    .btn-primary::before {
       content: '';
       position: absolute;
       inset: 0;
-      background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+      background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
       opacity: 0;
       transition: opacity 0.3s;
     }
-    .btn-login:hover {
+    .btn-primary:hover {
       transform: translateY(-2px);
       box-shadow: 0 10px 30px rgba(79,126,248,0.4);
     }
-    .btn-login:hover::before { opacity: 1; }
-    .btn-login:active { transform: translateY(0); }
+    .btn-primary.register-btn:hover {
+      box-shadow: 0 10px 30px rgba(16,185,129,0.4);
+    }
+    .btn-primary:hover::before { opacity: 1; }
+    .btn-primary:active { transform: translateY(0); }
+
+    /* Ripple effect */
+    .ripple {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.3);
+      transform: scale(0);
+      animation: rippleAnim 0.6s ease-out;
+      pointer-events: none;
+    }
+    @keyframes rippleAnim {
+      to { transform: scale(4); opacity: 0; }
+    }
 
     .divider {
       height: 1px;
@@ -246,12 +308,27 @@
       height: 1px;
       background: rgba(99,120,180,0.1);
     }
+
+    /* Flash message */
+    .flash-message {
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 0.85rem; font-weight: 600;
+      margin-bottom: 20px;
+      animation: fadeSlide 0.3s ease;
+    }
+    .flash-success {
+      background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.3);
+      color: var(--success);
+    }
+    .flash-error {
+      background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.3);
+      color: #fca5a5;
+    }
   </style>
 </head>
 <body>
-  <div class="orb orb-1"></div>
-  <div class="orb orb-2"></div>
-  <div class="orb orb-3"></div>
+  <canvas id="particles"></canvas>
 
   <div class="login-wrapper">
     <div class="brand-badge">
@@ -261,19 +338,59 @@
     </div>
 
     <div class="login-card">
-      <div class="card-heading">Teacher Portal</div>
+      <!-- Tab Switcher -->
+      <div class="tab-switcher">
+        <button class="tab-btn active" onclick="switchTab('login')">Sign In</button>
+        <button class="tab-btn" onclick="switchTab('register')">Create Account</button>
+      </div>
 
-      <form action="/login" method="POST">
-        <div class="field-group">
-          <label class="field-label" for="email">Email Address</label>
-          <input type="email" id="email" name="email" class="field-input" placeholder="you@institution.edu" required />
-        </div>
-        <div class="field-group">
-          <label class="field-label" for="password">Password</label>
-          <input type="password" id="password" name="password" class="field-input" placeholder="••••••••••" required />
-        </div>
-        <button type="submit" class="btn-login">Sign In to Dashboard →</button>
-      </form>
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="flash-message flash-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <!-- Login Panel -->
+      <div id="panel-login" class="form-panel active">
+        <form action="/login" method="POST">
+          <div class="field-group">
+            <label class="field-label" for="login-email">Email Address</label>
+            <input type="email" id="login-email" name="email" class="field-input" placeholder="you@institution.edu" required />
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="login-password">Password</label>
+            <input type="password" id="login-password" name="password" class="field-input" placeholder="••••••••••" required />
+          </div>
+          <button type="submit" class="btn-primary" onclick="createRipple(event)">Sign In to Dashboard →</button>
+        </form>
+      </div>
+
+      <!-- Register Panel -->
+      <div id="panel-register" class="form-panel">
+        <form action="/register" method="POST" onsubmit="return validateRegister()">
+          <div class="field-group">
+            <label class="field-label" for="reg-name">Full Name</label>
+            <input type="text" id="reg-name" name="username" class="field-input" placeholder="Dr. Jane Smith" required />
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="reg-email">Email Address</label>
+            <input type="email" id="reg-email" name="email" class="field-input" placeholder="you@institution.edu" required />
+          </div>
+          <div class="field-row">
+            <div class="field-group">
+              <label class="field-label" for="reg-pass">Password</label>
+              <input type="password" id="reg-pass" name="password" class="field-input" placeholder="••••••••" required minlength="6" />
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="reg-confirm">Confirm</label>
+              <input type="password" id="reg-confirm" name="confirm_password" class="field-input" placeholder="••••••••" required minlength="6" />
+            </div>
+          </div>
+          <button type="submit" class="btn-primary register-btn" onclick="createRipple(event)">Create Teacher Account ✓</button>
+        </form>
+      </div>
 
       <div class="divider"></div>
 
@@ -284,5 +401,109 @@
 
     <div class="security-badge">🔐 AES-256 Encrypted Session</div>
   </div>
+
+  <script>
+    // === Tab Switching ===
+    function switchTab(tab) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.form-panel').forEach(p => p.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById(`panel-${tab}`).classList.add('active');
+    }
+
+    // === Registration Validation ===
+    function validateRegister() {
+      const pass = document.getElementById('reg-pass').value;
+      const confirm = document.getElementById('reg-confirm').value;
+      if (pass !== confirm) {
+        alert('Passwords do not match!');
+        return false;
+      }
+      if (pass.length < 6) {
+        alert('Password must be at least 6 characters.');
+        return false;
+      }
+      return true;
+    }
+
+    // === Ripple Effect ===
+    function createRipple(event) {
+      const btn = event.currentTarget;
+      const circle = document.createElement('span');
+      const rect = btn.getBoundingClientRect();
+      const size = Math.max(rect.width, rect.height);
+      circle.style.width = circle.style.height = size + 'px';
+      circle.style.left = (event.clientX - rect.left - size/2) + 'px';
+      circle.style.top = (event.clientY - rect.top - size/2) + 'px';
+      circle.classList.add('ripple');
+      btn.appendChild(circle);
+      setTimeout(() => circle.remove(), 600);
+    }
+
+    // === Particle Animation ===
+    (function() {
+      const canvas = document.getElementById('particles');
+      const ctx = canvas.getContext('2d');
+      let w, h, particles = [];
+      const PARTICLE_COUNT = 60;
+      const CONNECTION_DIST = 120;
+      const colors = ['rgba(79,126,248,0.6)', 'rgba(124,58,237,0.5)', 'rgba(16,185,129,0.4)'];
+
+      function resize() {
+        w = canvas.width = window.innerWidth;
+        h = canvas.height = window.innerHeight;
+      }
+      window.addEventListener('resize', resize);
+      resize();
+
+      for (let i = 0; i < PARTICLE_COUNT; i++) {
+        particles.push({
+          x: Math.random() * w,
+          y: Math.random() * h,
+          vx: (Math.random() - 0.5) * 0.5,
+          vy: (Math.random() - 0.5) * 0.5,
+          r: Math.random() * 2 + 1,
+          color: colors[Math.floor(Math.random() * colors.length)]
+        });
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, w, h);
+
+        // Update and draw particles
+        for (let p of particles) {
+          p.x += p.vx;
+          p.y += p.vy;
+          if (p.x < 0 || p.x > w) p.vx *= -1;
+          if (p.y < 0 || p.y > h) p.vy *= -1;
+
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx.fillStyle = p.color;
+          ctx.fill();
+        }
+
+        // Draw connections
+        for (let i = 0; i < particles.length; i++) {
+          for (let j = i + 1; j < particles.length; j++) {
+            const dx = particles[i].x - particles[j].x;
+            const dy = particles[i].y - particles[j].y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist < CONNECTION_DIST) {
+              ctx.beginPath();
+              ctx.moveTo(particles[i].x, particles[i].y);
+              ctx.lineTo(particles[j].x, particles[j].y);
+              ctx.strokeStyle = `rgba(79,126,248,${0.15 * (1 - dist/CONNECTION_DIST)})`;
+              ctx.lineWidth = 0.5;
+              ctx.stroke();
+            }
+          }
+        }
+
+        requestAnimationFrame(draw);
+      }
+      draw();
+    })();
+  </script>
 </body>
 </html>

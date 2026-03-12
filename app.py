@@ -1,7 +1,7 @@
 import os
 import json
 import uuid
-from flask import Flask, render_template, request, jsonify, session, redirect, url_for
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for, flash
 from flask_socketio import SocketIO, emit, join_room
 import mysql.connector
 from ai_engine import generate_quiz_data 
@@ -76,6 +76,42 @@ def login():
             action_url='/',
             action_text='← Try Again'
         ), 401
+
+@app.route('/register', methods=['POST'])
+def register():
+    username = request.form.get('username')
+    email = request.form.get('email')
+    password = request.form.get('password')
+    confirm = request.form.get('confirm_password')
+    
+    if not all([username, email, password, confirm]):
+        flash('All fields are required.', 'error')
+        return redirect(url_for('index'))
+    
+    if password != confirm:
+        flash('Passwords do not match.', 'error')
+        return redirect(url_for('index'))
+    
+    if len(password) < 6:
+        flash('Password must be at least 6 characters.', 'error')
+        return redirect(url_for('index'))
+    
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    
+    # Check if email already exists
+    cursor.execute("SELECT id FROM teachers WHERE email = %s", (email,))
+    if cursor.fetchone():
+        flash('An account with this email already exists.', 'error')
+        return redirect(url_for('index'))
+    
+    # Create the teacher account
+    cursor.execute("INSERT INTO teachers (username, email, password_hash) VALUES (%s, %s, %s)",
+                   (username, email, password))
+    db.commit()
+    
+    flash('Account created successfully! Please sign in.', 'success')
+    return redirect(url_for('index'))
 
 @app.route('/dashboard')
 def dashboard():
@@ -212,6 +248,59 @@ def monitor_quiz(quiz_id):
     students = cursor.fetchall()
     
     return render_template('teacher/monitor.html', quiz=quiz, students=students, quiz_id=quiz_id)
+
+# --- TEACHER ANSWER SHEET REVIEW ---
+@app.route('/teacher/review/<int:quiz_id>')
+def review_quiz(quiz_id):
+    if 'teacher_id' not in session: return redirect(url_for('index'))
+    
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    
+    # Verify teacher owns this quiz
+    cursor.execute("SELECT id, title, topic, access_code FROM quizzes WHERE id = %s AND teacher_id = %s",
+                   (quiz_id, session['teacher_id']))
+    quiz = cursor.fetchone()
+    if not quiz:
+        return render_template('error.html',
+            error_code=403,
+            error_title='Access Denied',
+            error_message='You do not have permission to view this quiz.',
+            action_url='/dashboard',
+            action_text='← Back to Dashboard'
+        ), 403
+    
+    # Get all questions for the quiz
+    cursor.execute("SELECT * FROM questions WHERE quiz_id = %s", (quiz_id,))
+    questions = cursor.fetchall()
+    
+    # Get all student sessions with responses
+    cursor.execute("""
+        SELECT id, student_name, status, score, violation_count, responses 
+        FROM exam_sessions 
+        WHERE quiz_id = %s
+        ORDER BY score DESC
+    """, (quiz_id,))
+    students = cursor.fetchall()
+    
+    # Parse JSON responses for each student
+    for student in students:
+        raw = student.get('responses')
+        if raw:
+            student['parsed_responses'] = json.loads(raw)
+            # Build a map for easy lookup
+            student['response_map'] = {str(r['question_id']): r for r in student['parsed_responses']}
+        else:
+            student['parsed_responses'] = []
+            student['response_map'] = {}
+    
+    # Calculate stats
+    completed = [s for s in students if s['status'] == 'completed']
+    avg_score = round(sum(s['score'] for s in completed) / len(completed), 1) if completed else 0
+    
+    return render_template('teacher/review.html',
+        quiz=quiz, questions=questions, students=students,
+        quiz_id=quiz_id, avg_score=avg_score, total_completed=len(completed))
 
 
 

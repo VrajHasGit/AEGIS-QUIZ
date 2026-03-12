@@ -37,6 +37,55 @@
         linear-gradient(90deg, rgba(79,126,248,0.03) 1px, transparent 1px);
       background-size: 50px 50px; pointer-events: none;
     }
+    body::after {
+      content: '';
+      position: fixed; inset: 0;
+      background: linear-gradient(
+        135deg,
+        rgba(79,126,248,0.04) 0%,
+        rgba(124,58,237,0.03) 25%,
+        rgba(16,185,129,0.03) 50%,
+        rgba(245,158,11,0.02) 75%,
+        rgba(79,126,248,0.04) 100%
+      );
+      background-size: 400% 400%;
+      animation: gradientShift 20s ease infinite;
+      pointer-events: none;
+    }
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* Floating orbs */
+    .orb {
+      position: fixed; border-radius: 50%; filter: blur(80px);
+      pointer-events: none; z-index: 0;
+      animation: floatOrb 15s ease-in-out infinite;
+    }
+    .orb-1 {
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(79,126,248,0.1) 0%, transparent 70%);
+      top: -100px; right: -100px;
+    }
+    .orb-2 {
+      width: 300px; height: 300px;
+      background: radial-gradient(circle, rgba(124,58,237,0.08) 0%, transparent 70%);
+      bottom: -80px; left: -80px;
+      animation-delay: -5s;
+    }
+    .orb-3 {
+      width: 250px; height: 250px;
+      background: radial-gradient(circle, rgba(16,185,129,0.06) 0%, transparent 70%);
+      top: 40%; left: 30%;
+      animation-delay: -10s;
+    }
+    @keyframes floatOrb {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(30px, -25px) scale(1.05); }
+      66% { transform: translate(-20px, 20px) scale(0.95); }
+    }
 
     /* ===== NAVBAR ===== */
     .navbar {
@@ -101,9 +150,35 @@
       display: flex; flex-direction: column;
       transition: transform 0.25s, box-shadow 0.25s;
       animation: slideUp 0.5s cubic-bezier(0.22,1,0.36,1) both;
+      position: relative; overflow: hidden;
+    }
+    .create-card::before {
+      content: '';
+      position: absolute; inset: -1px;
+      background: conic-gradient(
+        from var(--angle, 0deg),
+        transparent 0%, rgba(79,126,248,0.4) 10%, rgba(124,58,237,0.4) 20%,
+        transparent 30%, transparent 70%, rgba(16,185,129,0.3) 80%,
+        rgba(79,126,248,0.4) 90%, transparent 100%
+      );
+      border-radius: 20px; z-index: -1;
+      animation: rotateBorder 6s linear infinite;
+    }
+    @property --angle {
+      syntax: '<angle>';
+      initial-value: 0deg;
+      inherits: false;
+    }
+    @keyframes rotateBorder { to { --angle: 360deg; } }
+    .create-card::after {
+      content: '';
+      position: absolute; inset: 1px;
+      background: rgba(15, 23, 42, 0.95);
+      border-radius: 19px; z-index: -1;
     }
     .create-card:hover { transform: translateY(-4px); box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
     .create-card:nth-child(2) { animation-delay: 0.1s; }
+    .create-card:nth-child(2)::before { animation-delay: -3s; }
 
     @keyframes slideUp {
       from { opacity: 0; transform: translateY(24px); }
@@ -196,6 +271,20 @@
     }
     tbody tr:last-child { border-bottom: none; }
     tbody tr:hover { background: rgba(255,255,255,0.02); }
+    /* Staggered row animation */
+    tbody tr {
+      animation: rowSlideIn 0.4s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    tbody tr:nth-child(1) { animation-delay: 0.3s; }
+    tbody tr:nth-child(2) { animation-delay: 0.38s; }
+    tbody tr:nth-child(3) { animation-delay: 0.46s; }
+    tbody tr:nth-child(4) { animation-delay: 0.54s; }
+    tbody tr:nth-child(5) { animation-delay: 0.62s; }
+    tbody tr:nth-child(n+6) { animation-delay: 0.7s; }
+    @keyframes rowSlideIn {
+      from { opacity: 0; transform: translateX(-12px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
     tbody td { padding: 16px 24px; font-size: 0.9rem; vertical-align: middle; }
 
     .quiz-title-cell { font-weight: 600; color: var(--text); }
@@ -265,6 +354,15 @@
     .empty-icon { font-size: 3rem; margin-bottom: 12px; opacity: 0.5; }
     .empty-text { font-size: 0.9rem; }
 
+    .btn-review {
+      padding: 8px 16px; border-radius: 9px;
+      background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3);
+      color: #fbbf24; font-family: 'Inter', sans-serif;
+      font-size: 0.8rem; font-weight: 700; text-decoration: none;
+      transition: all 0.25s; display: inline-block;
+    }
+    .btn-review:hover { background: rgba(245,158,11,0.2); color: #fbbf24; }
+
     /* Toast notification */
     .toast {
       position: fixed; bottom: 24px; right: 24px; z-index: 9999;
@@ -285,6 +383,10 @@
   </style>
 </head>
 <body>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+
   <nav class="navbar">
     <a href="#" class="nav-brand">
       <div class="brand-icon">🛡️</div>
@@ -367,6 +469,7 @@
                 <div class="action-btns" style="justify-content:flex-end;">
                   <button onclick="startExam('{{ quiz.id }}')" class="btn-start">🚀 Start</button>
                   <a href="/teacher/monitor/{{ quiz.id }}" class="btn-monitor">📊 Monitor</a>
+                  <a href="/teacher/review/{{ quiz.id }}" class="btn-review">📋 Review</a>
                   <span id="delete-wrap-{{ quiz.id }}">
                     <button onclick="confirmDelete('{{ quiz.id }}')" class="btn-delete">🗑️ Delete</button>
                   </span>

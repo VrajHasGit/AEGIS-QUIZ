@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AegisQuiz | Answer Sheet Review</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #060b18;
+      --surface: rgba(15, 23, 42, 0.9);
+      --surface-2: rgba(22, 33, 62, 0.6);
+      --border: rgba(99, 120, 180, 0.15);
+      --accent: #4f7ef8;
+      --accent-glow: rgba(79,126,248,0.3);
+      --text: #f1f5f9;
+      --muted: #64748b;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      min-height: 100vh;
+      color: var(--text);
+      position: relative;
+    }
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(79,126,248,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(79,126,248,0.03) 1px, transparent 1px);
+      background-size: 50px 50px; pointer-events: none;
+    }
+
+    /* ===== TOP BAR ===== */
+    .topbar {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(6,11,24,0.95);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(20px);
+      padding: 0 28px; height: 68px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .topbar-left { display: flex; align-items: center; gap: 20px; }
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .brand-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, var(--accent), #7c3aed);
+      border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px;
+    }
+    .brand-name { font-size: 1rem; font-weight: 800; color: var(--text); }
+    .quiz-info-chip {
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+      border-radius: 100px; padding: 5px 14px;
+      font-size: 0.78rem; color: var(--muted);
+    }
+    .quiz-info-chip strong { color: var(--text); }
+    .btn-back {
+      padding: 8px 16px; border-radius: 10px;
+      background: transparent; border: 1px solid var(--border);
+      color: var(--muted); font-family: 'Inter', sans-serif;
+      font-size: 0.85rem; font-weight: 600; cursor: pointer;
+      text-decoration: none; transition: all 0.2s;
+    }
+    .btn-back:hover { border-color: rgba(99,120,180,0.4); color: var(--text); }
+
+    /* ===== MAIN ===== */
+    .main { padding: 28px; max-width: 1100px; margin: 0 auto; }
+
+    /* Stat Grid */
+    .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px; padding: 22px 24px;
+      backdrop-filter: blur(20px);
+      position: relative; overflow: hidden;
+      animation: slideUp 0.5s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    .stat-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    }
+    .stat-card.blue::before { background: linear-gradient(90deg, var(--accent), #7c3aed); }
+    .stat-card.green::before { background: var(--success); }
+    .stat-card.yellow::before { background: var(--warning); }
+    .stat-card.red::before { background: var(--danger); }
+    .stat-card:nth-child(2) { animation-delay: 0.07s; }
+    .stat-card:nth-child(3) { animation-delay: 0.14s; }
+    .stat-card:nth-child(4) { animation-delay: 0.21s; }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .stat-value {
+      font-size: 2rem; font-weight: 800; line-height: 1;
+      letter-spacing: -1px; color: var(--text);
+      margin-bottom: 6px;
+    }
+    .stat-label {
+      font-size: 0.72rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted);
+    }
+
+    /* Student Cards */
+    .student-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+      margin-bottom: 16px;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+      animation: slideUp 0.5s cubic-bezier(0.22,1,0.36,1) both;
+      transition: box-shadow 0.3s, border-color 0.3s;
+    }
+    .student-card:hover {
+      box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+      border-color: rgba(99,120,180,0.3);
+    }
+
+    .student-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 24px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .student-header:hover { background: rgba(255,255,255,0.02); }
+
+    .student-left { display: flex; align-items: center; gap: 16px; }
+    .student-avatar {
+      width: 42px; height: 42px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent), #7c3aed);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 0.9rem; color: white;
+      flex-shrink: 0;
+    }
+    .student-name { font-weight: 700; font-size: 1rem; color: var(--text); }
+    .student-meta { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+
+    .student-stats { display: flex; align-items: center; gap: 20px; }
+    .score-pill {
+      padding: 6px 14px; border-radius: 100px;
+      font-size: 0.85rem; font-weight: 700;
+    }
+    .score-great { background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.3); color: var(--success); }
+    .score-good { background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.3); color: var(--warning); }
+    .score-poor { background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.3); color: var(--danger); }
+    .score-na { background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--muted); }
+
+    .violation-pill {
+      font-size: 0.78rem; font-weight: 600; color: var(--muted);
+    }
+    .violation-pill.flagged { color: var(--danger); }
+
+    .expand-icon {
+      font-size: 1.2rem; color: var(--muted);
+      transition: transform 0.3s cubic-bezier(0.22,1,0.36,1);
+    }
+    .student-card.expanded .expand-icon { transform: rotate(180deg); }
+
+    /* Answer Sheet (collapsible) */
+    .answer-sheet {
+      max-height: 0; overflow: hidden;
+      transition: max-height 0.5s cubic-bezier(0.22,1,0.36,1);
+      border-top: 0 solid transparent;
+    }
+    .student-card.expanded .answer-sheet {
+      max-height: 5000px;
+      border-top: 1px solid var(--border);
+    }
+    .answer-sheet-inner { padding: 24px; }
+
+    .q-item {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border);
+      border-left: 4px solid transparent;
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin-bottom: 12px;
+    }
+    .q-item.correct { border-left-color: var(--success); }
+    .q-item.wrong { border-left-color: var(--danger); }
+    .q-item.unanswered { border-left-color: var(--muted); }
+
+    .q-header {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      margin-bottom: 12px;
+    }
+    .q-number {
+      font-size: 0.7rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 1px;
+      color: var(--muted);
+    }
+    .q-verdict {
+      font-size: 0.75rem; font-weight: 700;
+      padding: 3px 10px; border-radius: 100px;
+    }
+    .verdict-correct { background: rgba(16,185,129,0.12); color: var(--success); }
+    .verdict-wrong { background: rgba(239,68,68,0.12); color: var(--danger); }
+    .verdict-skip { background: rgba(255,255,255,0.05); color: var(--muted); }
+
+    .q-text {
+      font-size: 0.92rem; font-weight: 600; color: var(--text);
+      line-height: 1.5; margin-bottom: 14px;
+    }
+
+    .opts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .opt-pill {
+      padding: 10px 14px; border-radius: 10px;
+      font-size: 0.82rem; border: 1px solid var(--border);
+      background: rgba(255,255,255,0.02); color: var(--text);
+      line-height: 1.4; display: flex; align-items: center; gap: 8px;
+    }
+    .opt-pill .opt-letter {
+      font-weight: 800; font-size: 0.75rem; color: var(--muted);
+      width: 22px; height: 22px; border-radius: 6px;
+      background: rgba(255,255,255,0.06);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .opt-pill.chosen-correct {
+      background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.4); color: #6ee7b7;
+    }
+    .opt-pill.chosen-correct .opt-letter { background: var(--success); color: white; }
+    .opt-pill.chosen-wrong {
+      background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.4); color: #fca5a5;
+    }
+    .opt-pill.chosen-wrong .opt-letter { background: var(--danger); color: white; }
+    .opt-pill.correct-highlight {
+      border: 1px dashed rgba(16,185,129,0.5); color: var(--success);
+    }
+
+    .empty-state {
+      text-align: center; padding: 60px 24px; color: var(--muted);
+    }
+    .empty-icon { font-size: 2.5rem; margin-bottom: 12px; opacity: 0.5; }
+
+    @media (max-width: 768px) {
+      .stat-grid { grid-template-columns: 1fr 1fr; }
+      .opts-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Top Bar -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="brand">
+        <div class="brand-icon">🛡️</div>
+        <span class="brand-name">Aegis Review</span>
+      </div>
+      <div class="quiz-info-chip">
+        📋 <strong>{{ quiz.title }}</strong> &nbsp;·&nbsp; Code: <strong>{{ quiz.access_code }}</strong>
+      </div>
+    </div>
+    <a href="/dashboard" class="btn-back">← Back to Dashboard</a>
+  </div>
+
+  <div class="main">
+    <!-- Stats -->
+    <div class="stat-grid">
+      <div class="stat-card blue">
+        <div class="stat-value">{{ students|length }}</div>
+        <div class="stat-label">Total Students</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-value">{{ total_completed }}</div>
+        <div class="stat-label">Completed</div>
+      </div>
+      <div class="stat-card yellow">
+        <div class="stat-value">{{ avg_score }}%</div>
+        <div class="stat-label">Average Score</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-value">{{ questions|length }}</div>
+        <div class="stat-label">Questions</div>
+      </div>
+    </div>
+
+    <!-- Student Cards -->
+    {% if students %}
+      {% for s in students %}
+      <div class="student-card" id="card-{{ s.id }}" style="animation-delay: {{ loop.index * 0.05 }}s;">
+        <div class="student-header" onclick="toggleCard('card-{{ s.id }}')">
+          <div class="student-left">
+            <div class="student-avatar">{{ s.student_name[0] | upper }}</div>
+            <div>
+              <div class="student-name">{{ s.student_name }}</div>
+              <div class="student-meta">
+                {{ s.status | capitalize }}
+                {% if s.violation_count > 0 %} · {{ s.violation_count }} violation(s){% endif %}
+              </div>
+            </div>
+          </div>
+          <div class="student-stats">
+            {% if s.status == 'completed' and s.score is not none %}
+              {% if s.score >= 75 %}
+                <span class="score-pill score-great">{{ s.score }}%</span>
+              {% elif s.score >= 50 %}
+                <span class="score-pill score-good">{{ s.score }}%</span>
+              {% else %}
+                <span class="score-pill score-poor">{{ s.score }}%</span>
+              {% endif %}
+            {% else %}
+              <span class="score-pill score-na">N/A</span>
+            {% endif %}
+            <span class="expand-icon">▼</span>
+          </div>
+        </div>
+
+        <div class="answer-sheet">
+          <div class="answer-sheet-inner">
+            {% if s.parsed_responses %}
+              {% for q in questions %}
+                {% set resp = s.response_map.get(q.id|string) %}
+                {% set is_correct = resp and resp.is_correct %}
+                {% set is_answered = resp and resp.student_choice %}
+                <div class="q-item {% if is_correct %}correct{% elif is_answered %}wrong{% else %}unanswered{% endif %}">
+                  <div class="q-header">
+                    <div class="q-number">Question {{ loop.index }}</div>
+                    {% if is_correct %}
+                      <span class="q-verdict verdict-correct">✓ Correct</span>
+                    {% elif is_answered %}
+                      <span class="q-verdict verdict-wrong">✗ Incorrect</span>
+                    {% else %}
+                      <span class="q-verdict verdict-skip">— Skipped</span>
+                    {% endif %}
+                  </div>
+                  <div class="q-text">{{ q.question_text }}</div>
+                  <div class="opts-grid">
+                    {% for letter, text in [('A', q.option_a), ('B', q.option_b), ('C', q.option_c), ('D', q.option_d)] %}
+                      {% set is_chosen = resp and resp.student_choice == letter %}
+                      {% set is_correct_ans = q.correct_answer == letter %}
+                      <div class="opt-pill
+                        {% if is_chosen and is_correct %}chosen-correct
+                        {% elif is_chosen and not is_correct %}chosen-wrong
+                        {% elif is_correct_ans and is_answered and not is_correct %}correct-highlight
+                        {% endif %}">
+                        <span class="opt-letter">{{ letter }}</span>
+                        {{ text }}
+                      </div>
+                    {% endfor %}
+                  </div>
+                </div>
+              {% endfor %}
+            {% else %}
+              <div class="empty-state">
+                <div class="empty-icon">📝</div>
+                <div>No responses recorded for this student.</div>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="student-card">
+        <div class="empty-state">
+          <div class="empty-icon">👥</div>
+          <div>No students have attempted this quiz yet.</div>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+
+  <script>
+    function toggleCard(id) {
+      const card = document.getElementById(id);
+      card.classList.toggle('expanded');
+    }
+  </script>
+</body>
+</html>
