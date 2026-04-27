@@ -1,5 +1,5 @@
 <p align="center">
-  <h1 align="center">🛡️ CLUELY.AI</h1>
+  <h1 align="center">CLUELY.AI</h1>
   <p align="center">
     <strong>AI-Enhanced, Guardian-Integrated Secure Quiz Platform</strong>
   </p>
@@ -18,9 +18,9 @@
 
 ---
 
-## ✨ Features
+## Features
 
-### 👩‍🏫 For Instructors
+### For Instructors
 - **Unified Dashboard** — Manage, deploy, and monitor all intelligence quizzes.
 - **Instant AI Synthesis** — Generate robust MCQ quizzes instantly via **Google Gemini 2.5 Flash Lite**.
 - **Live Telemetry Monitoring** — Track student connectivity, status, and violations in real-time.
@@ -34,7 +34,7 @@
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Layer        | Technology                                                       |
 | ------------ | ---------------------------------------------------------------- |
@@ -46,7 +46,7 @@
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 - **Python 3.10+**
@@ -94,7 +94,7 @@ The server will start at **http://localhost:5000**
 
 ---
 
-## 📊 Architecture & Database
+## Architecture & Database
 
 CLUELY.AI utilizes a modular architecture dividing real-time presentation, data persistence, and AI synthesis.
 
