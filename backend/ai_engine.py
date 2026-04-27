@@ -12,28 +12,29 @@ genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 def generate_quiz_data(topic, num_questions):
     # Strict JSON configuration
     model = genai.GenerativeModel(
-        model_name="gemini-2.5-flash",
+        model_name="gemini-2.5-flash-lite",
         generation_config={"response_mime_type": "application/json"}
     )
     
-    prompt = f"""
-    Create a JSON list of exactly {num_questions} quiz questions about {topic}.
-    Each object MUST have: "question_text", "option_a", "option_b", "option_c", "option_d", "correct_answer".
-    The "correct_answer" must be 'A', 'B', 'C', or 'D'.
-    """
+    prompt = f"""Generate {num_questions} multiple-choice questions on {topic}. 
+JSON format: [{{"question_text":"", "option_a":"", "option_b":"", "option_c":"", "option_d":"", "correct_answer":"A|B|C|D"}}]"""
     
     try:
         response = model.generate_content(prompt)
         
-        # Safety check if AI blocks the prompt (e.g. sensitive topics)
         if not response.text:
             print("AI Blocked the prompt or returned empty.")
             return None
             
-        clean_text = response.text.strip().replace('```json', '').replace('```', '')
+        # Clean the response text to ensure it's valid JSON
+        clean_text = response.text.strip()
+        if clean_text.startswith('```'):
+            clean_text = clean_text.split('\n', 1)[1] if '\n' in clean_text else clean_text
+            clean_text = clean_text.rsplit('\n', 1)[0] if '\n' in clean_text else clean_text
+            clean_text = clean_text.replace('```', '')
+        
         data = json.loads(clean_text)
         
-        # Ensure it's always a list
         return data if isinstance(data, list) else [data]
         
     except Exception as e:

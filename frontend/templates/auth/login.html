@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CLUELY.AI | Instructor Portal</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/awwwards.css') }}">
+  <style>
+    .login-container {
+      width: 100%;
+      max-width: 500px;
+      margin-top: 5%;
+    }
+    .header-logo {
+      color: var(--text);
+    }
+    .header-logo span {
+      color: var(--muted);
+      font-family: var(--font-heading);
+      font-style: italic;
+      text-transform: lowercase;
+    }
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.1rem;
+      margin-bottom: 48px;
+      font-family: var(--font-heading);
+      font-style: italic;
+    }
+    .tab-switcher {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 48px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      font-family: var(--font-body);
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 16px 24px;
+      cursor: pointer;
+      position: relative;
+      transition: color 0.4s;
+    }
+    .tab-btn.active {
+      color: var(--accent);
+    }
+    .tab-btn.active::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      width: 100%;
+      height: 1px;
+      background: var(--accent);
+    }
+    .form-panel {
+      display: none;
+      animation: fadeSlide 0.6s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+    }
+    .form-panel.active {
+      display: block;
+    }
+    @keyframes fadeSlide {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .field-group {
+      margin-bottom: 32px;
+    }
+    .submit-btn-wrap {
+      margin-top: 64px;
+      width: 100%;
+    }
+    .submit-btn-wrap button {
+      width: 100%;
+    }
+    .flash-alert {
+      padding: 24px;
+      margin-bottom: 32px;
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      letter-spacing: 0.05em;
+      border: 1px solid var(--danger);
+      background: transparent;
+      color: var(--danger);
+      text-transform: uppercase;
+    }
+    .flash-success {
+      border: 1px solid var(--success);
+      color: var(--success);
+    }
+  </style>
+</head>
+<body>
+  <div class="noise"></div>
+  <div class="ambient-glow"></div>
+
+  <div class="page-container fade-in-up">
+    <div class="login-container glass-panel">
+      
+      <h1 class="display-text">CLUELY<span>.AI</span></h1>
+      <p class="subtitle">Instructor Control Node</p>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="flash-alert {% if category == 'success' %}flash-success{% endif %}">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <div class="tab-switcher">
+        <button class="tab-btn active" onclick="switchTab('login')">AUTHENTICATE</button>
+        <button class="tab-btn" onclick="switchTab('register')">INITIALIZE ACCOUNT</button>
+      </div>
+
+      <div id="panel-login" class="form-panel active">
+        <form action="{{ url_for('login') }}" method="POST">
+          <div class="field-group">
+            <label for="login-email" class="label-text">Identifier (Email)</label>
+            <input type="email" id="login-email" name="email" class="input-field" placeholder="instructor@cluely.ai" required>
+          </div>
+          <div class="field-group">
+            <label for="login-password" class="label-text">Security Key</label>
+            <input type="password" id="login-password" name="password" class="input-field" placeholder="••••••••" required>
+          </div>
+          <div class="submit-btn-wrap">
+            <button type="submit" class="btn-primary"><span>ACCESS NODE</span></button>
+          </div>
+        </form>
+      </div>
+
+      <div id="panel-register" class="form-panel">
+        <form action="{{ url_for('register') }}" method="POST" onsubmit="return validateReg()">
+          <div class="field-group">
+            <label for="reg-name" class="label-text">Full Name</label>
+            <input type="text" id="reg-name" name="username" class="input-field" placeholder="Dr. Jane Doe" required>
+          </div>
+          <div class="field-group">
+            <label for="reg-email" class="label-text">Identifier (Email)</label>
+            <input type="email" id="reg-email" name="email" class="input-field" placeholder="instructor@cluely.ai" required>
+          </div>
+          <div class="field-group">
+            <label for="reg-pass" class="label-text">Security Key</label>
+            <input type="password" id="reg-pass" name="password" class="input-field" placeholder="••••••••" required minlength="6">
+          </div>
+          <div class="field-group">
+            <label for="reg-confirm" class="label-text">Verify Key</label>
+            <input type="password" id="reg-confirm" name="confirm_password" class="input-field" placeholder="••••••••" required minlength="6">
+          </div>
+          <div class="submit-btn-wrap">
+            <button type="submit" class="btn-primary"><span>CREATE NODE</span></button>
+          </div>
+        </form>
+      </div>
+      
+      <div style="text-align: center; margin-top: 32px;">
+        <a href="{{ url_for('join_quiz') }}" style="color: var(--muted); font-size: 0.8rem; text-decoration: none; border-bottom: 1px solid var(--muted); padding-bottom: 2px;">Student Access Portal</a>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(function(btn) {
+        btn.classList.remove('active');
+      });
+      document.querySelectorAll('.form-panel').forEach(function(panel) {
+        panel.classList.remove('active');
+      });
+      event.target.classList.add('active');
+      document.getElementById('panel-' + tabId).classList.add('active');
+    }
+
+    function validateReg() {
+      var p1 = document.getElementById('reg-pass').value;
+      var p2 = document.getElementById('reg-confirm').value;
+      if (p1 !== p2) {
+        alert("Security keys do not match.");
+        return false;
+      }
+      return true;
+    }
+  </script>
+</body>
+</html>

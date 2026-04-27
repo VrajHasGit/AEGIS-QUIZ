@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CLUELY.AI | Monitor Interface</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/awwwards.css') }}">
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <style>
+    .monitor-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 24px;
+      border-bottom: 1px dotted rgba(0, 71, 255, 0.4);
+      margin-bottom: 48px;
+      width: 100%;
+    }
+    .brand-logo {
+      font-size: 1.5rem;
+      margin: 0;
+    }
+    .quiz-info {
+      font-family: var(--font-body);
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-size: 0.8rem;
+    }
+    .quiz-info span { color: var(--accent); }
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+    .live-indicator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-body);
+      font-weight: 700;
+      color: var(--success);
+      font-size: 0.8rem;
+      letter-spacing: 0.1em;
+    }
+    .live-dot {
+      width: 8px; height: 8px;
+      background: var(--success);
+      border-radius: 50%;
+      animation: blink 1.5s infinite;
+    }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 32px;
+      margin-bottom: 48px;
+      width: 100%;
+    }
+    .stat-card {
+      text-align: center;
+      padding: 32px;
+      border: 1px solid var(--border);
+      background: var(--bg-secondary);
+    }
+    .stat-value {
+      font-family: var(--font-display);
+      font-size: 4rem;
+      color: var(--text);
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+    .stat-label {
+      font-family: var(--font-body);
+      font-weight: 700;
+      font-size: 0.75rem;
+      letter-spacing: 0.15em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+    
+    .monitor-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .monitor-table th {
+      text-align: left;
+      font-family: var(--font-body);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      padding: 16px 0;
+      border-bottom: 2px solid var(--border);
+      color: var(--muted);
+      font-size: 0.75rem;
+    }
+    .monitor-table td {
+      padding: 24px 0;
+      border-bottom: 1px dotted var(--border);
+      font-size: 1rem;
+      vertical-align: middle;
+      font-family: var(--font-body);
+    }
+    .monitor-table tr:hover td {
+      background: rgba(0, 71, 255, 0.02);
+    }
+    
+    .badge {
+      font-family: var(--font-body);
+      font-weight: 700;
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      padding: 4px 8px;
+      border: 1px solid;
+      text-transform: uppercase;
+      display: inline-block;
+    }
+    .badge-waiting { border-color: var(--danger); color: var(--danger); }
+    .badge-active { border-color: var(--accent); color: var(--accent); }
+    .badge-completed { border-color: var(--success); color: var(--success); }
+    
+    .score-bar {
+      width: 80px; height: 4px;
+      background: rgba(0,0,0,0.1);
+      margin-top: 8px;
+    }
+    .score-fill { height: 100%; background: var(--text); }
+    
+    .violation-flag {
+      color: var(--danger);
+      font-weight: 700;
+    }
+    
+    .alert-ticker {
+      position: fixed;
+      bottom: 32px;
+      right: 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      z-index: 999;
+    }
+    .alert-box {
+      background: var(--text);
+      color: var(--bg);
+      padding: 16px 24px;
+      border: 1px solid var(--danger);
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      max-width: 300px;
+      box-shadow: 10px 10px 0px rgba(0, 71, 255, 0.2);
+    }
+    .alert-box strong { color: var(--danger); }
+  </style>
+</head>
+<body>
+  <div class="noise"></div>
+  <div class="ambient-glow"></div>
+
+  <div class="page-container fade-in-up" style="max-width: 1400px; margin: 0 auto; align-items: stretch; justify-content: flex-start; padding-top: 48px;">
+    
+    <nav class="monitor-nav">
+      <div style="display: flex; align-items: center; gap: 32px;">
+        <h1 class="display-text brand-logo">CLUELY<span>.AI</span></h1>
+        <div class="quiz-info">{{ quiz.title }} &mdash; HASH: <span>{{ quiz.access_code }}</span></div>
+      </div>
+      
+      <div class="nav-actions">
+        <div class="live-indicator"><div class="live-dot"></div> TRANSMITTING</div>
+        <div id="global-timer" style="font-family: var(--font-display); font-size: 1.5rem; color: var(--accent);">--:--</div>
+        <button onclick="globalLaunch()" class="btn-primary" style="padding: 12px 24px;"><span>LAUNCH ALL</span></button>
+        <a href="/dashboard" class="btn-outline" style="padding: 12px 24px;"><span>RETURN</span></a>
+      </div>
+    </nav>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value" id="stat-total">{{ students|length }}</div>
+        <div class="stat-label">SUBJECTS</div>
+      </div>
+      <div class="stat-card" style="border-color: var(--danger);">
+        <div class="stat-value" id="stat-flags" style="color: var(--danger);">{{ students|selectattr('violation_count', 'gt', 0)|list|length }}</div>
+        <div class="stat-label" style="color: var(--danger);">BREACHES</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-done">{{ students|selectattr('status', 'equalto', 'completed')|list|length }}</div>
+        <div class="stat-label">COMPLETED</div>
+      </div>
+    </div>
+
+    <div class="glass-panel" style="padding: 48px;">
+      <h2 style="font-family: var(--font-heading); font-size: 1.5rem; margin-bottom: 32px;">TELEMETRY FEED</h2>
+      
+      <table class="monitor-table">
+        <thead>
+          <tr>
+            <th>Identity</th>
+            <th>State</th>
+            <th>Clock</th>
+            <th>Integrity</th>
+            <th>Flags</th>
+            <th style="text-align: right;">Intervention</th>
+          </tr>
+        </thead>
+        <tbody id="student-table-body">
+          {% if students %}
+            {% for s in students %}
+            <tr id="row-{{ s.id }}">
+              <td style="font-weight: 700;">{{ s.student_name }}</td>
+              <td>
+                {% if s.status == 'waiting' %}
+                  <span class="badge badge-waiting">HOLD</span>
+                {% elif s.status == 'completed' %}
+                  <span class="badge badge-completed">DONE</span>
+                {% else %}
+                  <span class="badge badge-active">ACTIVE</span>
+                {% endif %}
+              </td>
+              <td style="color: var(--muted); font-family: monospace;">
+                {% if s.status == 'completed' %} --:-- {% else %}<span class="student-timer">--:--</span>{% endif %}
+              </td>
+              <td>
+                {% if s.status == 'completed' %}
+                  <div style="font-weight: 700;">{{ s.score }}%</div>
+                  <div class="score-bar"><div class="score-fill" style="width:{{ s.score }}%"></div></div>
+                {% else %}
+                  <span style="color: var(--muted); font-size: 0.8rem; text-transform: uppercase;">Awaiting Data</span>
+                {% endif %}
+              </td>
+              <td>
+                <div class="violation-cell {% if s.violation_count > 0 %}violation-flag{% else %}clean{% endif %}">
+                  {% if s.violation_count > 0 %}{{ s.violation_count }} BREACH(ES){% else %}<span style="color: var(--muted);">CLEAN</span>{% endif %}
+                </div>
+              </td>
+              <td style="text-align:right;" id="ctrl-{{ s.id }}">
+                {% if s.status == 'waiting' %}
+                  <button onclick="approveStudent('{{ s.id }}', '{{ s.student_name }}')" class="btn-outline" style="padding: 6px 12px; border-color: var(--success); color: var(--success);"><span>APPROVE</span></button>
+                  <button onclick="denyStudent('{{ s.id }}', '{{ s.student_name }}')" class="btn-outline" style="padding: 6px 12px; border-color: var(--danger); color: var(--danger);"><span>DENY</span></button>
+                {% elif s.status == 'completed' %}
+                  <span style="color: var(--muted); font-size: 0.75rem; text-transform: uppercase; font-weight: 700;">Finalized</span>
+                {% elif s.status == 'terminated' %}
+                  <span style="color: var(--danger); font-size: 0.75rem; font-weight: 700; text-transform: uppercase;">Severed</span>
+                {% else %}
+                  <span style="color: var(--accent); font-size: 0.75rem; font-weight: 700; text-transform: uppercase;">Syncing</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          {% else %}
+            <tr><td colspan="6" style="text-align: center; color: var(--muted); padding: 64px 0; font-family: var(--font-heading); font-style: italic;">
+              Awaiting connections...
+            </td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <div class="alert-ticker" id="alert-ticker"></div>
+
+  <script>
+    const socket = io();
+    const quizId = "{{ quiz_id }}";
+    socket.emit('join_room', { quiz_id: quizId });
+    let timerRunning = false;
+    
+    const escapeHtml = (value) => String(value ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#39;');
+
+    const studentNameMap = {};
+    document.querySelectorAll('#student-table-body tr[id^="row-"]').forEach(row => {
+      const nameCell = row.querySelectorAll('td')[0];
+      if (nameCell) studentNameMap[nameCell.textContent.trim()] = row.id.replace('row-', '');
+    });
+
+    function approveStudent(id, name) {
+      socket.emit('teacher_approve_resume', { name, quiz_id: quizId });
+      const cell = document.getElementById(`ctrl-${id}`);
+      if (cell) cell.innerHTML = `<span style="color: var(--success); font-size: 0.75rem; font-weight: 700; text-transform: uppercase;">Restored</span>`;
+      const row = document.getElementById(`row-${id}`);
+      if (row) row.querySelectorAll('td')[1].innerHTML = `<span class="badge badge-active">ACTIVE</span>`;
+    }
+
+    function denyStudent(id, name) {
+      socket.emit('teacher_deny_resume', { name, quiz_id: quizId });
+      const cell = document.getElementById(`ctrl-${id}`);
+      if (cell) cell.innerHTML = `<span style="color: var(--danger); font-size: 0.75rem; font-weight: 700; text-transform: uppercase;">Severed</span>`;
+      const row = document.getElementById(`row-${id}`);
+      if (row) row.querySelectorAll('td')[1].innerHTML = `<span class="badge badge-waiting">TERM</span>`;
+    }
+
+    function globalLaunch() {
+      if (confirm("Deploy to all connected nodes?")) {
+        socket.emit('teacher_start_exam', { quiz_id: quizId });
+        const duration = parseInt("{{ quiz.duration_minutes }}") || 30;
+        if (!timerRunning) startTimer(duration * 60);
+      }
+    }
+
+    function startTimer(totalSeconds) {
+      timerRunning = true;
+      const el = document.getElementById('global-timer');
+      const interval = setInterval(() => {
+        if (totalSeconds <= 0) { clearInterval(interval); el.textContent = '00:00'; return; }
+        const m = Math.floor(totalSeconds / 60);
+        const s = totalSeconds % 60;
+        el.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        totalSeconds--;
+      }, 1000);
+    }
+
+    function addAlert(name, reason) {
+      const ticker = document.getElementById('alert-ticker');
+      const item = document.createElement('div');
+      item.className = 'alert-box';
+      item.innerHTML = `<strong>! BREACH: ${escapeHtml(name)}</strong><br><span style="color: var(--muted); font-size: 0.75rem;">${escapeHtml(reason)}</span>`;
+      ticker.appendChild(item);
+      setTimeout(() => item.remove(), 8000);
+    }
+
+    socket.on('monitor_update', (data) => {
+      addAlert(data.name, data.reason);
+      const flagEl = document.getElementById('stat-flags');
+      if (flagEl) flagEl.textContent = parseInt(flagEl.textContent) + 1;
+
+      const studentId = studentNameMap[data.name];
+      if (studentId) {
+        const row = document.getElementById(`row-${studentId}`);
+        if (row) {
+          const violationCell = row.querySelectorAll('td')[4].querySelector('.violation-cell');
+          if (violationCell) {
+            let currentCount = 0;
+            const match = violationCell.textContent.match(/(\d+)/);
+            if (match) currentCount = parseInt(match[1]);
+            violationCell.innerHTML = `${currentCount + 1} BREACH(ES)`;
+            violationCell.className = 'violation-cell violation-flag';
+          }
+          row.querySelectorAll('td')[1].innerHTML = `<span class="badge badge-waiting">HOLD</span>`;
+        }
+      }
+    });
+
+    socket.on('receive_justification', (data) => {
+      const name = data.name || 'Subject';
+      addAlert(name, `OVERRIDE REQ: "${data.msg || 'N/A'}"`);
+      const studentId = studentNameMap[name];
+      if (studentId) {
+        const ctrlCell = document.getElementById(`ctrl-${studentId}`);
+        if (ctrlCell) {
+          ctrlCell.innerHTML = `
+            <button onclick="approveStudent('${studentId}', '${name}')" class="btn-outline" style="padding: 6px 12px; border-color: var(--success); color: var(--success);"><span>APPROVE</span></button>
+            <button onclick="denyStudent('${studentId}', '${name}')" class="btn-outline" style="padding: 6px 12px; border-color: var(--danger); color: var(--danger);"><span>DENY</span></button>
+          `;
+        }
+      }
+    });
+
+    socket.on('student_completed', () => {
+      const doneEl = document.getElementById('stat-done');
+      if (doneEl) doneEl.textContent = parseInt(doneEl.textContent) + 1;
+    });
+  </script>
+</body>
+</html>

@@ -1,5 +1,5 @@
 // static/js/security.js
-// AEGIS Security Module — importable by quiz.html
+// CLUELY.AI Security Module — importable by quiz.html
 // Usage: initSecurity(socket, studentName, quizId, onLockdown)
 
 let _socket = null;
@@ -7,6 +7,8 @@ let _studentName = '';
 let _quizId = '';
 let _lockdownCallback = null;
 let _violationCount = 0;
+let _lastViolationAt = 0;
+const VIOLATION_COOLDOWN_MS = 1500;
 
 function initSecurity(socket, studentName, quizId, onLockdown) {
   _socket = socket;
@@ -77,10 +79,13 @@ function getViolationCount() {
 
 function reportViolation(reason) {
   if (!_socket) return;
+  const now = Date.now();
+  if (now - _lastViolationAt < VIOLATION_COOLDOWN_MS) return;
+  _lastViolationAt = now;
 
   _violationCount++;
 
-  console.warn('[AEGIS] Violation:', reason, '| Total:', _violationCount);
+  console.warn('[CLUELY.AI] Violation:', reason, '| Total:', _violationCount);
 
   // Emit to backend
   _socket.emit('security_violation', {

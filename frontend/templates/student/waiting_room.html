@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CLUELY.AI | Standby</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/awwwards.css') }}">
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <style>
+    .standby-box {
+      max-width: 600px;
+      text-align: center;
+    }
+    .pulse-dot {
+      width: 16px;
+      height: 16px;
+      background: var(--accent);
+      border-radius: 50%;
+      margin: 0 auto 32px;
+      animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+    }
+    @keyframes ping {
+      75%, 100% {
+        transform: scale(2.5);
+        opacity: 0;
+      }
+    }
+    .status-text {
+      font-size: 1.2rem;
+      color: var(--muted);
+      margin-bottom: 48px;
+    }
+  </style>
+</head>
+<body>
+  <div class="noise"></div>
+  <div class="ambient-glow"></div>
+
+  <div class="page-container fade-in-up">
+    <div class="standby-box glass-panel">
+      
+      <div class="pulse-dot"></div>
+      
+      <p style="font-family: var(--font-display); font-size: 0.8rem; color: var(--accent); letter-spacing: 2px; margin-bottom: 16px;">SECURE LINK ESTABLISHED</p>
+      
+      <h1 class="display-text" style="font-size: 3rem; margin-bottom: 16px;">{{ session.get('student_name', 'Student') }}</h1>
+      
+      <p class="status-text">Awaiting clearance from your instructor to commence the assessment.</p>
+      
+      <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); padding: 24px; border-radius: 16px; text-align: left;">
+        <h4 style="color: var(--text); font-size: 0.9rem; margin-bottom: 8px;">PROTOCOL READY</h4>
+        <p style="color: var(--muted); font-size: 0.85rem; line-height: 1.5;">Upon commencement, CLUELY.AI will immediately enforce full-screen lockdown. Ensure all extraneous applications and notifications are silenced.</p>
+      </div>
+
+    </div>
+  </div>
+
+  <script type="application/json" id="q-id">{{ session.get('quiz_id', '') | tojson }}</script>
+  <script>
+    const socket = io();
+    const quizId = JSON.parse(document.getElementById('q-id').textContent || '""');
+    socket.emit("join_room", { quiz_id: quizId });
+
+    socket.on("force_start", function () {
+      document.body.style.transition = 'opacity 0.6s ease';
+      document.body.style.opacity = '0';
+      setTimeout(function() { 
+        window.location.href = "{{ url_for('exam_page') }}"; 
+      }, 600);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CLUELY.AI | {{ error_title or 'System Error' }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/awwwards.css') }}">
+  <style>
+    .error-container {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .error-card {
+      width: 100%;
+      max-width: 600px;
+      padding: 64px 48px;
+      text-align: center;
+      position: relative;
+    }
+    .error-card::before {
+      content: '';
+      position: absolute;
+      top: -8px;
+      left: -8px;
+      right: 8px;
+      bottom: 8px;
+      border: 1px dotted var(--accent);
+      z-index: -1;
+    }
+    .error-code {
+      font-family: var(--font-display);
+      font-size: 8rem;
+      line-height: 0.9;
+      color: var(--text);
+      margin-bottom: 24px;
+      letter-spacing: -0.05em;
+    }
+    .error-code span {
+      color: var(--accent);
+    }
+    .error-title {
+      font-family: var(--font-heading);
+      font-size: 1.5rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 16px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .error-message {
+      font-family: var(--font-body);
+      font-size: 1.1rem;
+      color: var(--muted);
+      line-height: 1.6;
+      margin-bottom: 48px;
+    }
+    .action-group {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+    }
+    .diagnostic-footer {
+      margin-top: 64px;
+      font-family: monospace;
+      font-size: 0.75rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+  <div class="noise"></div>
+  
+  <div class="error-container fade-in-up">
+    <div class="glass-panel error-card">
+      
+      <div class="error-code">
+        {% if error_code %}
+          {{ error_code|string|first }}<span>{{ error_code|string|slice(1, 3)|join }}</span>
+        {% else %}
+          E<span>RR</span>
+        {% endif %}
+      </div>
+      
+      <div class="error-title">
+        {{ error_title or 'Fatal Exception' }}
+      </div>
+      
+      <div class="error-message">
+        {{ error_message or 'The system encountered an unrecoverable fault during operation. Telemetry has been recorded.' }}
+      </div>
+      
+      <div class="action-group">
+        <a href="{{ action_url or '/' }}" class="btn-primary">
+          <span>{{ action_text or 'RETURN TO HUB' }}</span>
+        </a>
+        {% if secondary_url %}
+        <a href="{{ secondary_url }}" class="btn-outline">
+          <span>{{ secondary_text or 'DIAGNOSTIC DASHBOARD' }}</span>
+        </a>
+        {% endif %}
+      </div>
+      
+      <div class="diagnostic-footer">
+        CLUELY.AI Security Protocol // Node failure detected
+      </div>
+      
+    </div>
+  </div>
+</body>
+</html>

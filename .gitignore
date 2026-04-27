@@ -1,4 +1,30 @@
+# Environment Variables
 .env
+
+# SQLite Database Files
+*.db
+*.sqlite
+*.sqlite3
+aegis_quiz.db
+aegis_quiz.db-journal
+
+# Python Bytecode
 __pycache__/
-*.pyc
-*.pyo
+*.py[cod]
+*$py.class
+
+# Virtual Environments
+venv/
+env/
+.venv/
+Scripts/
+
+# IDE & Editor Configs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS Generated Files
+.DS_Store
+Thumbs.db
