@@ -6,10 +6,17 @@
   <title>CLUELY.AI | Instructor Portal</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/awwwards.css') }}">
   <style>
+    body {
+      background-image: url("{{ url_for('static', filename='images/bg.png') }}");
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+    }
     .login-container {
       width: 100%;
       max-width: 500px;
       margin-top: 5%;
+      text-align: center;
     }
     .header-logo {
       color: var(--text);
@@ -102,8 +109,8 @@
   <div class="page-container fade-in-up">
     <div class="login-container glass-panel">
       
-      <h1 class="display-text">CLUELY<span>.AI</span></h1>
-      <p class="subtitle">Instructor Control Node</p>
+      <h1 class="display-text" style="font-size: clamp(3rem, 8vw, 4rem); margin-bottom: 8px;">CLUELY<span>.AI</span></h1>
+      <p class="subtitle" style="margin-bottom: 48px;">Instructor Control Node</p>
 
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -113,7 +120,7 @@
         {% endif %}
       {% endwith %}
 
-      <div class="tab-switcher">
+      <div class="tab-switcher" style="justify-content: center;">
         <button class="tab-btn active" onclick="switchTab('login')">AUTHENTICATE</button>
         <button class="tab-btn" onclick="switchTab('register')">INITIALIZE ACCOUNT</button>
       </div>
