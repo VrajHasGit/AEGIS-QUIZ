@@ -1,5 +1,5 @@
 -- =============================================
--- AEGIS QUIZ - Database Setup Script
+-- CLUELY.AI - Database Setup Script
 -- Run this script to create the full database
 -- =============================================
 
@@ -67,8 +67,8 @@ CREATE TABLE IF NOT EXISTS exam_sessions (
 
 -- ---------------------------------------------
 -- Sample Teacher Account (for testing)
--- Email: admin@aegis.com | Password: admin123
+-- Email: admin@cluely.ai | Password: admin123
 -- ---------------------------------------------
 INSERT INTO teachers (username, email, password_hash) 
-VALUES ('Admin Teacher', 'admin@aegis.com', 'admin123')
+VALUES ('Admin Teacher', 'admin@cluely.ai', 'admin123')
 ON DUPLICATE KEY UPDATE username = username;

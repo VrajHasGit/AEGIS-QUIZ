@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CLUELY.AI | Report</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/awwwards.css') }}">
+  <style>
+    .report-container {
+      width: 100%;
+      max-width: 800px;
+      margin: 64px auto;
+    }
+    .score-hero {
+      text-align: center;
+      margin-bottom: 64px;
+    }
+    .score-circle {
+      width: 200px;
+      height: 200px;
+      border: 2px solid var(--accent);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      margin: 0 auto 32px;
+      box-shadow: 0 0 60px var(--accent-muted);
+    }
+    .score-val {
+      font-family: var(--font-display);
+      font-size: 5rem;
+      color: var(--accent);
+      line-height: 1;
+    }
+    .score-label {
+      font-size: 0.8rem;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-top: 8px;
+    }
+    
+    .review-list {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    .review-item {
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 32px;
+    }
+    .review-item.correct {
+      border-left: 4px solid var(--success);
+    }
+    .review-item.wrong {
+      border-left: 4px solid var(--danger);
+    }
+    .q-text {
+      font-family: var(--font-heading);
+      font-size: 1.4rem;
+      margin-bottom: 24px;
+    }
+    .ans-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .ans-box {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      padding: 16px;
+      border-radius: 12px;
+      font-size: 0.9rem;
+    }
+    .ans-box.correct-choice {
+      background: rgba(74, 255, 180, 0.1);
+      border-color: var(--success);
+      color: var(--success);
+    }
+    .ans-box.wrong-choice {
+      background: rgba(255, 74, 74, 0.1);
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+    .ans-box.the-answer {
+      border: 1px dashed var(--success);
+      color: var(--success);
+    }
+  </style>
+</head>
+<body>
+  <div class="noise"></div>
+  <div class="ambient-glow"></div>
+
+  <div class="page-container fade-in-up" style="justify-content: flex-start;">
+    
+    <div class="report-container">
+      
+      <div class="score-hero">
+        <div class="score-circle">
+          <div class="score-val">{{ score }}</div>
+          <div class="score-label">PERCENT</div>
+        </div>
+        <h1 class="display-text" style="font-size: 2.5rem; margin-bottom: 8px;">{{ session.get('student_name', 'Student') }}</h1>
+        <p style="color: var(--muted); font-size: 1.1rem;">Assessment Analytics & Security Audit</p>
+      </div>
+
+      <div class="review-list">
+        <h3 style="font-family: var(--font-display); font-size: 1rem; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 16px;">ITEM REVIEW</h3>
+        
+        {% for q in questions %}
+          {% set resp = response_map.get(q.id|string) %}
+          <div class="review-item {% if resp and resp.is_correct %}correct{% else %}wrong{% endif %}">
+            <div style="font-family: var(--font-display); font-size: 0.7rem; color: var(--muted); margin-bottom: 12px;">Q.{{ loop.index }}</div>
+            <div class="q-text">{{ q.question_text }}</div>
+            
+            <div class="ans-grid">
+              {% for letter, text in [('A', q.option_a), ('B', q.option_b), ('C', q.option_c), ('D', q.option_d)] %}
+                {% set is_chosen = resp and resp.student_choice == letter %}
+                {% set is_correct_ans = q.correct_answer == letter %}
+                
+                <div class="ans-box 
+                  {% if is_chosen and resp.is_correct %}correct-choice
+                  {% elif is_chosen and not resp.is_correct %}wrong-choice
+                  {% elif is_correct_ans and resp and not resp.is_correct %}the-answer
+                  {% endif %}">
+                  <strong>{{ letter }}</strong> - {{ text }}
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        {% endfor %}
+
+      </div>
+
+      <div style="text-align: center; margin-top: 64px;">
+        <a href="{{ url_for('logout') }}" class="btn-primary"><span>TERMINATE SESSION</span></a>
+      </div>
+
+    </div>
+
+  </div>
+
+</body>
+</html>

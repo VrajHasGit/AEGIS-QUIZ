@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CLUELY.AI | Manual Builder</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/awwwards.css') }}">
+  <style>
+    .builder-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 24px;
+      border-bottom: 1px dotted rgba(0, 71, 255, 0.4);
+      margin-bottom: 48px;
+      width: 100%;
+    }
+    .brand-logo { font-size: 1.5rem; margin: 0; }
+    .nav-actions { display: flex; align-items: center; gap: 24px; }
+    
+    .question-block {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      padding: 32px;
+      margin-bottom: 24px;
+      position: relative;
+    }
+    .q-label {
+      font-family: var(--font-heading);
+      font-size: 1.25rem;
+      margin-bottom: 24px;
+      color: var(--accent);
+      display: block;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .option-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .opt-badge {
+      font-family: var(--font-body);
+      font-weight: 700;
+      color: var(--accent);
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text-inverse);
+    }
+    
+    .btn-remove {
+      position: absolute;
+      top: 32px;
+      right: 32px;
+      background: transparent;
+      color: var(--danger);
+      border: 1px solid var(--danger);
+      padding: 4px 8px;
+      cursor: pointer;
+      font-family: var(--font-body);
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 0.7rem;
+    }
+    .btn-remove:hover {
+      background: var(--danger);
+      color: var(--bg);
+    }
+    
+    select.input-field {
+      appearance: none;
+      border: 1px solid var(--border);
+      border-radius: 0;
+      margin-top: 16px;
+      background: var(--bg);
+      color: var(--text);
+    }
+    
+    .bottom-bar {
+      position: fixed;
+      bottom: 0; left: 0; width: 100%;
+      background: var(--bg);
+      border-top: 1px solid var(--border);
+      padding: 16px 32px;
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      z-index: 100;
+    }
+  </style>
+</head>
+<body>
+  <div class="noise"></div>
+  <div class="ambient-glow"></div>
+
+  <div class="page-container fade-in-up" style="max-width: 1000px; margin: 0 auto; align-items: stretch; justify-content: flex-start; padding-top: 48px; padding-bottom: 120px;">
+    
+    <nav class="builder-nav">
+      <div style="display: flex; align-items: center; gap: 32px;">
+        <h1 class="display-text brand-logo">CLUELY<span>.AI</span></h1>
+        <div style="font-family: var(--font-body); font-weight: 700; font-size: 0.8rem; letter-spacing: 0.1em;">MANUAL CONSTRUCTION</div>
+      </div>
+      <div class="nav-actions">
+        <a href="/dashboard" class="btn-outline" style="padding: 10px 20px;"><span>ABORT</span></a>
+      </div>
+    </nav>
+
+    <form action="/teacher/create-manual" method="POST">
+      <div class="glass-panel" style="padding: 32px; margin-bottom: 48px;">
+        <h2 style="font-family: var(--font-heading); font-size: 1.5rem; margin-bottom: 24px;">CORE PARAMETERS</h2>
+        <div style="display: flex; gap: 16px;">
+          <div style="flex: 2;">
+            <label class="label-text">Designation</label>
+            <input type="text" name="quiz_title" class="input-field" placeholder="Midterm Physics" required />
+          </div>
+          <div style="flex: 1;">
+            <label class="label-text">Topic Directive</label>
+            <input type="text" name="topic" class="input-field" placeholder="Physics" required />
+          </div>
+          <div style="flex: 1;">
+            <label class="label-text">Max Time (m)</label>
+            <input type="number" name="duration" class="input-field" placeholder="30" min="1" required />
+          </div>
+        </div>
+      </div>
+
+      <div id="question-container">
+        <div class="question-block" id="q-block-1">
+          <span class="q-label">Item 1</span>
+          <input type="text" name="question[]" class="input-field" placeholder="Define the query..." style="margin-bottom: 24px;" required />
+          
+          <div class="grid-2">
+            <div class="option-row">
+              <div class="opt-badge">A</div>
+              <input type="text" name="opt_a[]" class="input-field" placeholder="Alpha" required />
+            </div>
+            <div class="option-row">
+              <div class="opt-badge">B</div>
+              <input type="text" name="opt_b[]" class="input-field" placeholder="Beta" required />
+            </div>
+            <div class="option-row">
+              <div class="opt-badge">C</div>
+              <input type="text" name="opt_c[]" class="input-field" placeholder="Gamma" required />
+            </div>
+            <div class="option-row">
+              <div class="opt-badge">D</div>
+              <input type="text" name="opt_d[]" class="input-field" placeholder="Delta" required />
+            </div>
+          </div>
+          
+          <select name="correct[]" class="input-field" style="width: auto; padding: 8px 16px; margin-top: 24px;">
+            <option value="A">Expected Output: A</option>
+            <option value="B">Expected Output: B</option>
+            <option value="C">Expected Output: C</option>
+            <option value="D">Expected Output: D</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="bottom-bar">
+        <button type="button" class="btn-outline" onclick="addQuestion()"><span>APPEND ITEM</span></button>
+        <button type="submit" class="btn-primary" style="padding: 16px 64px;"><span>COMMIT & PUBLISH</span></button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    let questionCount = 1;
+    function addQuestion() {
+      questionCount++;
+      const container = document.getElementById("question-container");
+      const original = document.getElementById("q-block-1");
+      const newBlock = original.cloneNode(true);
+
+      newBlock.id = `q-block-${questionCount}`;
+      newBlock.querySelector(".q-label").innerText = `Item ${questionCount}`;
+      newBlock.querySelectorAll("input").forEach(i => i.value = "");
+
+      if (!newBlock.querySelector('.btn-remove')) {
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'btn-remove';
+        removeBtn.innerText = 'PURGE';
+        removeBtn.onclick = () => {
+          newBlock.remove();
+          renumberQuestions();
+        };
+        newBlock.appendChild(removeBtn);
+      }
+      container.appendChild(newBlock);
+      newBlock.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+    function renumberQuestions() {
+      document.querySelectorAll('.question-block').forEach((block, i) => {
+        block.querySelector('.q-label').innerText = `Item ${i + 1}`;
+      });
+      questionCount = document.querySelectorAll('.question-block').length;
+    }
+  </script>
+</body>
+</html>

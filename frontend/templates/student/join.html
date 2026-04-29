@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CLUELY.AI | Secure Entry</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/awwwards.css') }}">
+  <style>
+    .join-container {
+      width: 100%;
+      max-width: 500px;
+    }
+    .header-logo {
+      font-size: 2.5rem;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+    .header-logo span {
+      color: var(--accent);
+    }
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.1rem;
+      margin-bottom: 48px;
+    }
+    .field-group {
+      margin-bottom: 24px;
+    }
+    .code-input {
+      font-family: var(--font-display) !important;
+      font-size: 1.8rem !important;
+      letter-spacing: 8px;
+      text-align: center;
+      text-transform: uppercase;
+    }
+    .submit-btn-wrap {
+      margin-top: 40px;
+      width: 100%;
+    }
+    .submit-btn-wrap button {
+      width: 100%;
+    }
+    .flash-alert {
+      padding: 16px;
+      border-radius: 12px;
+      margin-bottom: 24px;
+      font-size: 0.9rem;
+      border: 1px solid var(--danger);
+      background: rgba(255, 74, 74, 0.1);
+      color: var(--danger);
+    }
+  </style>
+</head>
+<body>
+  <div class="noise"></div>
+  <div class="ambient-glow"></div>
+
+  <div class="page-container fade-in-up">
+    <div class="join-container glass-panel">
+      
+      <h1 class="header-logo display-text">CLUELY<span>.AI</span></h1>
+      <p class="subtitle">Secure assessment portal.</p>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="flash-alert">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <form action="{{ url_for('join_quiz') }}" method="POST">
+        
+        <div class="field-group">
+          <label for="code" class="label-text">Access Code</label>
+          <input 
+            type="text" 
+            id="code" 
+            name="code" 
+            class="input-field code-input" 
+            placeholder="XXXXXX" 
+            maxlength="8" 
+            required 
+            autocomplete="off">
+        </div>
+
+        <div class="field-group">
+          <label for="name" class="label-text">Participant Name</label>
+          <input 
+            type="text" 
+            id="name" 
+            name="name" 
+            class="input-field" 
+            placeholder="John Doe" 
+            required>
+        </div>
+
+        <div class="submit-btn-wrap">
+          <button type="submit" class="btn-primary"><span>Authenticate</span></button>
+        </div>
+
+      </form>
+      
+      <div style="text-align: center; margin-top: 32px;">
+        <a href="{{ url_for('login') }}" style="color: var(--muted); font-size: 0.8rem; text-decoration: none; border-bottom: 1px solid var(--muted); padding-bottom: 2px;">Instructor Portal</a>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('code').addEventListener('input', function() {
+      this.value = this.value.toUpperCase();
+    });
+  </script>
+</body>
+</html>

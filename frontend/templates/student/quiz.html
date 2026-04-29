@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CLUELY.AI | Live Assessment</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/awwwards.css') }}">
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script src="{{ url_for('static', filename='js/security.js') }}"></script>
+  <style>
+    .quiz-layout {
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 40px;
+    }
+    .timer {
+      font-family: var(--font-display);
+      font-size: 2rem;
+      color: var(--accent);
+    }
+    .status-pill {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      padding: 8px 16px;
+      border-radius: 100px;
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--success);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--success);
+    }
+    .progress-track {
+      width: 100%;
+      height: 2px;
+      background: var(--border);
+      margin-bottom: 48px;
+      position: relative;
+    }
+    .progress-fill {
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      background: var(--accent);
+      transition: width 0.4s ease;
+    }
+
+    .question-box {
+      margin-bottom: 48px;
+    }
+    .q-num {
+      font-family: var(--font-display);
+      color: var(--muted);
+      font-size: 1rem;
+      margin-bottom: 16px;
+    }
+    .q-text {
+      font-size: 2rem;
+      line-height: 1.4;
+      font-family: var(--font-heading);
+      margin-bottom: 48px;
+    }
+
+    .options-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .option-card {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 24px 32px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      cursor: pointer;
+      transition: all 0.3s;
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 1.1rem;
+      text-align: left;
+    }
+    .option-card:hover {
+      background: rgba(255, 255, 255, 0.02);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+    .option-card.selected {
+      background: var(--accent-muted);
+      border-color: var(--accent);
+    }
+    .opt-letter {
+      font-family: var(--font-display);
+      font-size: 1.2rem;
+      color: var(--muted);
+    }
+    .option-card.selected .opt-letter {
+      color: var(--accent);
+    }
+
+    .nav-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 64px;
+    }
+
+    /* Overlays */
+    .full-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
+    .overlay-hidden {
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.5s ease;
+    }
+
+    /* Lockdown specific */
+    .lockdown-box {
+      background: var(--bg-secondary);
+      border: 1px solid var(--danger);
+      max-width: 500px;
+      padding: 48px;
+      border-radius: 32px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="noise"></div>
+  <div class="ambient-glow"></div>
+
+  <!-- Intro Screen -->
+  <div id="intro-screen" class="full-overlay">
+    <div style="text-align: center; max-width: 600px; padding: 24px;">
+      <h1 class="display-text" style="font-size: 4rem; margin-bottom: 24px;">CLUELY.AI PROTOCOL</h1>
+      <p style="color: var(--muted); font-size: 1.2rem; margin-bottom: 48px;">
+        This assessment is secured. Full-screen mode will be enforced. Any navigation away from this window will be flagged and may result in termination.
+      </p>
+      <button id="start-exam-btn" class="btn-primary" style="font-size: 1.2rem; padding: 24px 64px;"><span>INITIALIZE</span></button>
+    </div>
+  </div>
+
+  <!-- Lockdown Screen -->
+  <div id="lockdown-screen" class="full-overlay overlay-hidden">
+    <div class="lockdown-box">
+      <h2 style="color: var(--danger); margin-bottom: 16px; font-size: 2rem;">SECURITY BREACH</h2>
+      <p style="color: var(--muted); margin-bottom: 32px;">Your session has been suspended due to an out-of-bounds action. Please submit a justification to your instructor.</p>
+      <textarea id="justification" class="input-field" style="height: 120px; margin-bottom: 24px; resize: none;" placeholder="Explain your action..."></textarea>
+      <button id="submit-justification-btn" class="btn-primary" style="width: 100%; background: var(--danger); color: white;"><span>Submit Protocol</span></button>
+      <p id="wait-msg" style="display: none; color: var(--accent); margin-top: 16px; font-family: var(--font-display); font-size: 0.8rem;">Awaiting Override...</p>
+    </div>
+  </div>
+
+  <!-- Terminated Screen -->
+  <div id="terminated-screen" class="full-overlay overlay-hidden">
+    <div style="text-align: center;">
+      <h1 style="color: var(--danger); font-size: 4rem; margin-bottom: 24px;">TERMINATED</h1>
+      <p style="color: var(--muted); font-size: 1.2rem; margin-bottom: 48px;">Session ended by instructor override.</p>
+      <a href="{{ url_for('join_quiz') }}" class="btn-outline">Return to Portal</a>
+    </div>
+  </div>
+
+  <!-- Main UI -->
+  <div class="page-container" id="main-ui" style="opacity: 0;">
+    <div class="quiz-layout">
+      
+      <div class="top-bar">
+        <div class="status-pill">
+          <div class="status-dot"></div>
+          SECURE SESSION
+        </div>
+        <div id="timer" class="timer">--:--</div>
+      </div>
+
+      <div class="progress-track">
+        <div id="progress" class="progress-fill" style="width: 0%;"></div>
+      </div>
+
+      <div class="question-box fade-in-up" id="q-container">
+        <div class="q-num" id="q-label">Q.01</div>
+        <div class="q-text" id="q-text">Loading content...</div>
+
+        <div class="options-grid" id="options">
+          <!-- Options injected via JS -->
+        </div>
+      </div>
+
+      <div class="nav-controls">
+        <button id="prev-btn" class="btn-outline" onclick="goPrev()">PREVIOUS</button>
+        <span id="counter" style="color: var(--muted); font-family: var(--font-display);">1 / X</span>
+        <button id="next-btn" class="btn-outline" onclick="goNext()">NEXT</button>
+        <button id="submit-btn" class="btn-primary" onclick="submitExam()" style="display: none;"><span>SUBMIT</span></button>
+      </div>
+
+    </div>
+  </div>
+
+  <script type="application/json" id="q-data">{{ questions | tojson }}</script>
+  <script type="application/json" id="s-name">{{ session.get('student_name', 'Student') | tojson }}</script>
+  <script type="application/json" id="q-id">{{ session.get('quiz_id', '') | tojson }}</script>
+  <script type="application/json" id="q-duration">{{ quiz_duration | default(30) | tojson }}</script>
+
+  <script>
+    // Safe injection via DOM parsing to eliminate IDE syntax errors
+    const qData = JSON.parse(document.getElementById('q-data').textContent || '[]');
+    const sName = JSON.parse(document.getElementById('s-name').textContent || '""');
+    const qId = JSON.parse(document.getElementById('q-id').textContent || '""');
+    const duration = JSON.parse(document.getElementById('q-duration').textContent || '30');
+    
+    let currentIndex = 0;
+    let studentAnswers = {};
+    let timerInt = null;
+    const socket = io();
+
+    document.getElementById('start-exam-btn').addEventListener('click', function() {
+      document.documentElement.requestFullscreen().catch(function(e){});
+      socket.emit('join_room', { quiz_id: qId });
+      initSecurity(socket, sName, qId, handleLockdown);
+      
+      document.getElementById('intro-screen').classList.add('overlay-hidden');
+      document.getElementById('main-ui').style.opacity = '1';
+      document.getElementById('main-ui').classList.add('fade-in-up');
+      
+      renderQ();
+      startTimer(duration * 60);
+    });
+
+    function renderQ() {
+      if (!qData || qData.length === 0) return;
+      const q = qData[currentIndex];
+      
+      document.getElementById('q-label').innerText = 'Q.' + (currentIndex + 1 < 10 ? '0' : '') + (currentIndex + 1);
+      document.getElementById('q-text').innerText = q.question_text;
+      
+      let html = '';
+      const letters = ['a', 'b', 'c', 'd'];
+      for(let i=0; i<letters.length; i++) {
+        const l = letters[i];
+        const val = q['option_' + l];
+        const isSel = (studentAnswers[q.id] === l.toUpperCase());
+        const cls = isSel ? 'option-card selected' : 'option-card';
+        html += '<button class="' + cls + '" onclick="pickAns(\'' + q.id + '\', \'' + l.toUpperCase() + '\')">';
+        html += '<span class="opt-letter">' + l.toUpperCase() + '</span>';
+        html += '<span>' + val + '</span>';
+        html += '</button>';
+      }
+      document.getElementById('options').innerHTML = html;
+
+      // Nav logic
+      document.getElementById('prev-btn').style.visibility = (currentIndex === 0) ? 'hidden' : 'visible';
+      if(currentIndex === qData.length - 1) {
+        document.getElementById('next-btn').style.display = 'none';
+        document.getElementById('submit-btn').style.display = 'inline-flex';
+      } else {
+        document.getElementById('next-btn').style.display = 'inline-flex';
+        document.getElementById('submit-btn').style.display = 'none';
+      }
+      
+      document.getElementById('counter').innerText = (currentIndex + 1) + ' / ' + qData.length;
+      document.getElementById('progress').style.width = ((currentIndex + 1) / qData.length * 100) + '%';
+    }
+
+    function pickAns(qid, letter) {
+      studentAnswers[qid] = letter;
+      renderQ();
+      if(currentIndex < qData.length - 1) {
+        setTimeout(goNext, 300);
+      }
+    }
+
+    function goNext() {
+      if(currentIndex < qData.length - 1) {
+        currentIndex++;
+        renderQ();
+      }
+    }
+
+    function goPrev() {
+      if(currentIndex > 0) {
+        currentIndex--;
+        renderQ();
+      }
+    }
+
+    function startTimer(sec) {
+      const el = document.getElementById('timer');
+      timerInt = setInterval(function() {
+        if(sec <= 0) {
+          clearInterval(timerInt);
+          submitExam();
+          return;
+        }
+        let m = Math.floor(sec / 60);
+        let s = sec % 60;
+        el.innerText = (m < 10 ? '0'+m : m) + ':' + (s < 10 ? '0'+s : s);
+        sec--;
+      }, 1000);
+    }
+
+    function handleLockdown(reason, count) {
+      document.getElementById('lockdown-screen').classList.remove('overlay-hidden');
+    }
+
+    document.getElementById('submit-justification-btn').addEventListener('click', function() {
+      const text = document.getElementById('justification').value;
+      if(!text) return;
+      socket.emit('submit_justification', { msg: text, name: sName });
+      this.disabled = true;
+      document.getElementById('wait-msg').style.display = 'block';
+    });
+
+    socket.on('resume_exam', function(data) {
+      if(data.target_student === sName) {
+        document.documentElement.requestFullscreen().then(function() {
+          document.getElementById('lockdown-screen').classList.add('overlay-hidden');
+          document.getElementById('submit-justification-btn').disabled = false;
+          document.getElementById('wait-msg').style.display = 'none';
+          document.getElementById('justification').value = '';
+        }).catch(function(){});
+      }
+    });
+
+    socket.on('exam_terminated', function(data) {
+      if(data.target_student === sName) {
+        document.getElementById('lockdown-screen').classList.add('overlay-hidden');
+        document.getElementById('terminated-screen').classList.remove('overlay-hidden');
+        clearInterval(timerInt);
+      }
+    });
+
+    async function submitExam() {
+      document.getElementById('main-ui').style.opacity = '0.5';
+      document.getElementById('main-ui').style.pointerEvents = 'none';
+      
+      let payload = [];
+      for(let key in studentAnswers) {
+        payload.push({ question_id: key, choice: studentAnswers[key] });
+      }
+
+      const res = await fetch("{{ url_for('submit_exam') }}", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ answers: payload })
+      });
+      const data = await res.json();
+      if(data.status === 'success') {
+        window.location.href = data.redirect;
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,16 +1,16 @@
 <p align="center">
-  <h1 align="center">🛡️ AEGIS QUIZ</h1>
+  <h1 align="center">CLUELY.AI</h1>
   <p align="center">
     <strong>AI-Enhanced, Guardian-Integrated Secure Quiz Platform</strong>
   </p>
   <p align="center">
-    A real-time, anti-cheat online examination system built with Flask, Socket.IO, and Google Gemini AI.
+    A real-time, anti-cheat online examination system built with Flask, Socket.IO, and Google Gemini AI. Features a brand-new <i>Editorial Brutalist</i> design language.
   </p>
   <p align="center">
     <a href="#features">Features</a> •
     <a href="#tech-stack">Tech Stack</a> •
     <a href="#getting-started">Getting Started</a> •
-    <a href="#database">Database</a> •
+    <a href="#architecture--database">Architecture & DB</a> •
     <a href="#project-structure">Structure</a> •
     <a href="#license">License</a>
   </p>
@@ -18,261 +18,204 @@
 
 ---
 
-## ✨ Features
+## Features
 
-### 👩‍🏫 For Teachers
-- **Dashboard** — Create, manage, and monitor all quizzes from one place.
-- **AI-Powered Quiz Generation** — Instantly generate MCQ quizzes on any topic using **Google Gemini AI**.
-- **Manual Quiz Builder** — Craft custom quizzes question-by-question with full control.
-- **Live Monitoring** — Watch students take the exam in real-time via WebSockets.
-- **Anti-Cheat Alerts** — Get instant violation alerts when a student switches tabs, minimizes the window, or attempts to copy.
+### For Instructors
+- **Unified Dashboard** — Manage, deploy, and monitor all intelligence quizzes.
+- **Instant AI Synthesis** — Generate robust MCQ quizzes instantly via **Google Gemini 2.5 Flash Lite**.
+- **Live Telemetry Monitoring** — Track student connectivity, status, and violations in real-time.
+- **Anti-Cheat Alerts** — Immediate security events triggered when students switch tabs or attempt to breach the lockdown.
 
 ### 🎓 For Students
-- **Join via Access Code** — Enter a short code to join any live exam. No account needed.
-- **Waiting Room** — Students wait in a real-time lobby until the teacher starts the exam.
-- **Timed Exams** — Complete the quiz under a set time limit.
-- **Instant Results** — View score, correct answers, and violation count immediately after submission.
-
-### 🔒 Security & Integrity
-- **Tab-Switch Detection** — Flags students who navigate away from the exam window.
-- **Copy-Paste Prevention** — Disables right-click and text selection during exams.
-- **Violation Counter** — Tracks and reports total security violations per student.
-- **Teacher-Controlled Resumption** — Teachers can approve or deny a student's request to continue after a violation.
+- **Hash-Based Access** — Join exams securely using an 8-character access hash.
+- **Synchronized Deployment** — Wait in a live lobby until the instructor triggers a global launch.
+- **Lockdown Environment** — Secure full-screen exam mode preventing copy/paste, tab switching, and window blurring.
+- **Instant Results** — Automated grading providing immediate feedback.
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Layer        | Technology                                                       |
 | ------------ | ---------------------------------------------------------------- |
 | **Backend**  | [Flask](https://flask.palletsprojects.com/) (Python)             |
 | **Real-Time**| [Flask-SocketIO](https://flask-socketio.readthedocs.io/) (WebSockets) |
-| **Database** | [MySQL](https://www.mysql.com/)                                  |
-| **AI Engine**| [Google Gemini API](https://ai.google.dev/) (`gemini-2.5-flash`) |
-| **Frontend** | HTML5, CSS3, Vanilla JavaScript                                  |
+| **Database** | SQLite3 (`aegis_quiz.db`)                                        |
+| **AI Engine**| [Google Gemini API](https://ai.google.dev/) (`gemini-2.5-flash-lite`) |
+| **Frontend** | HTML5, Vanilla JS, Awwwards-style Brutalist CSS (`awwwards.css`) |
 
 ---
 
-## 🚀 Getting Started
-
-Follow these steps to run AEGIS Quiz locally on your machine.
+## Getting Started
 
 ### Prerequisites
-
-Make sure you have the following installed:
-
-- **Python 3.9+** — [Download](https://www.python.org/downloads/)
-- **MySQL Server** — [Download](https://dev.mysql.com/downloads/mysql/)
-- **Git** — [Download](https://git-scm.com/downloads)
+- **Python 3.10+**
 - **Google Gemini API Key** — [Get one here](https://aistudio.google.com/app/apikey)
 
 ### 1. Clone the Repository
-
 ```bash
-git clone https://github.com/VrajHasGit/AEGIS-QUIZ.git
+git clone https://github.com/notnamansinha/AEGIS-QUIZ.git
 cd AEGIS-QUIZ
 ```
 
-### 2. Create a Virtual Environment (Recommended)
-
+### 2. Install Dependencies
 ```bash
-# Windows
 python -m venv venv
-venv\Scripts\activate
+venv\Scripts\activate  # Windows
+# source venv/bin/activate  # macOS / Linux
 
-# macOS / Linux
-python3 -m venv venv
-source venv/bin/activate
+pip install -r backend/requirements.txt
 ```
 
-### 3. Install Dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-### 4. Set Up the Database
-
-Open your MySQL client (MySQL Workbench, terminal, etc.) and run the setup script:
-
-```bash
-mysql -u root -p < database/setup.sql
-```
-
-Or manually execute the contents of `database/setup.sql` in your MySQL GUI. This will:
-- Create the `aegis_quiz_db` database
-- Create all 4 required tables (`teachers`, `quizzes`, `questions`, `exam_sessions`)
-- Insert a sample teacher account for testing
-
-### 5. Configure Environment Variables
-
-Create a `.env` file in the project root:
+### 3. Configure Environment Variables
+Create a `.env` file in the `backend/` directory:
 
 ```env
-# --- MySQL Database Credentials ---
-DB_HOST=localhost
-DB_USER=root
-DB_PASSWORD=your_mysql_password
-DB_NAME=aegis_quiz_db
-
 # --- Google Gemini AI Key ---
 GEMINI_API_KEY=your_gemini_api_key_here
 
 # --- Flask Secret Key (For secure sessions) ---
-FLASK_SECRET_KEY=your_random_secret_key_here
+FLASK_SECRET_KEY=cluely_super_secret_key_123
 ```
 
-> 💡 **Tip**: Generate a Flask secret key by running `python -c "import secrets; print(secrets.token_hex(24))"`
-
-### 6. Run the Application
+### 4. Run the Application
+The SQLite database will automatically initialize upon first launch.
 
 ```bash
-python app.py
+python backend/app.py
 ```
-
 The server will start at **http://localhost:5000**
 
-### 7. Log In
-
-Use the default test credentials:
-
+### 5. Default Instructor Credentials
 | Field    | Value              |
 | -------- | ------------------ |
-| Email    | `admin@aegis.com`  |
+| Email    | `admin@cluely.ai`  |
 | Password | `admin123`         |
 
 ---
 
-## 🗄️ Database
+## Architecture & Database
 
-AEGIS Quiz uses **MySQL** with 4 core tables. The full schema is in [`database/setup.sql`](database/setup.sql).
+CLUELY.AI utilizes a modular architecture dividing real-time presentation, data persistence, and AI synthesis.
 
-### Entity Relationship
-
-```
-┌──────────────┐       ┌──────────────┐       ┌──────────────────┐
-│   teachers   │───1:N─│   quizzes    │───1:N─│    questions     │
-│──────────────│       │──────────────│       │──────────────────│
-│ id (PK)      │       │ id (PK)      │       │ id (PK)          │
-│ username     │       │ teacher_id   │──FK   │ quiz_id      (FK)│
-│ email        │       │ title        │       │ question_text    │
-│ password_hash│       │ topic        │       │ option_a/b/c/d   │
-│ created_at   │       │ access_code  │       │ correct_answer   │
-└──────────────┘       │ duration_min │       └──────────────────┘
-                       │ created_at   │
-                       └──────┬───────┘
-                              │
-                              │ 1:N
-                              ▼
-                       ┌──────────────────┐
-                       │  exam_sessions   │
-                       │──────────────────│
-                       │ id (PK)          │
-                       │ quiz_id      (FK)│
-                       │ student_name     │
-                       │ status           │
-                       │ score            │
-                       │ violation_count  │
-                       │ responses (JSON) │
-                       │ started_at       │
-                       └──────────────────┘
+### System Flow
+```mermaid
+graph TD
+    A[Student Browser] <-->|Socket.IO| B(Flask WebSockets)
+    C[Instructor Browser] <-->|Socket.IO| B
+    B <--> D{Flask Routes}
+    D <-->|CRUD| E[(SQLite Database)]
+    D <-->|Prompt Gen| F[Gemini 2.5 Flash Lite]
+    
+    subgraph Frontend
+    A
+    C
+    end
+    
+    subgraph Backend
+    B
+    D
+    F
+    E
+    end
 ```
 
-### Table Descriptions
-
-| Table             | Purpose                                                            |
-| ----------------- | ------------------------------------------------------------------ |
-| `teachers`        | Stores teacher accounts (login credentials)                        |
-| `quizzes`         | Quiz metadata — title, topic, access code, duration, owner         |
-| `questions`       | Individual MCQs with 4 options and a correct answer key            |
-| `exam_sessions`   | Tracks each student attempt — score, violations, and JSON responses|
+### Database Entity Relationship (SQLite)
+```mermaid
+erDiagram
+    TEACHERS ||--o{ QUIZZES : owns
+    QUIZZES ||--o{ QUESTIONS : contains
+    QUIZZES ||--o{ EXAM_SESSIONS : "taken by"
+    
+    TEACHERS {
+        int id PK
+        string username
+        string email
+        string password_hash
+        datetime created_at
+    }
+    QUIZZES {
+        int id PK
+        int teacher_id FK
+        string title
+        string topic
+        string access_code
+        int duration_minutes
+        datetime created_at
+    }
+    QUESTIONS {
+        int id PK
+        int quiz_id FK
+        text question_text
+        string option_a
+        string option_b
+        string option_c
+        string option_d
+        string correct_answer
+    }
+    EXAM_SESSIONS {
+        int id PK
+        int quiz_id FK
+        string student_name
+        string status
+        int score
+        int violation_count
+        json responses
+        datetime started_at
+    }
+```
 
 ---
 
 ## 📁 Project Structure
 
-```
-AEGIS-QUIZ/
-├── app.py                  # Main Flask application & Socket.IO events
-├── ai_engine.py            # Google Gemini AI quiz generation engine
-├── db_manager.py           # Database utility functions
-├── requirements.txt        # Python dependencies
-├── .env                    # Environment variables (not committed)
-├── .gitignore              # Git ignore rules
+The repository has been restructured to cleanly separate the python backend logic from the frontend static assets and templates.
+
+```text
+CLUELY-AI/
+├── backend/                  # Core Server Logic
+│   ├── app.py                # Main Flask & Socket.IO server
+│   ├── ai_engine.py          # Gemini AI API interface
+│   ├── db_manager.py         # SQLite connection & schema init
+│   ├── requirements.txt      # Python dependencies
+│   └── .env                  # Secrets (Not committed)
 │
-├── database/
-│   └── setup.sql           # Full MySQL schema & seed data
+├── frontend/                 # Client Interface & Aesthetics
+│   ├── static/
+│   │   ├── css/
+│   │   │   └── awwwards.css  # Brutalist design system tokens
+│   │   └── js/
+│   │       ├── teacher.js    # Instructor dashboard logic
+│   │       ├── student.js    # Exam interface controller
+│   │       └── security.js   # Anti-cheat lockdown system
+│   └── templates/
+│       ├── auth/             # Login views
+│       ├── student/          # Exam, Waiting Room, Results views
+│       ├── teacher/          # Dashboard, Monitor, Builder views
+│       ├── base.html         # Jinja base layout
+│       └── error.html        # Brutalist 404/500 handler
 │
-├── static/
-│   ├── css/
-│   │   ├── main.css        # Global styles
-│   │   └── exam.css        # Exam-specific styles
-│   └── js/
-│       ├── teacher.js      # Teacher dashboard logic
-│       ├── student.js      # Student exam logic
-│       └── security.js     # Anti-cheat detection system
+├── database/                 # Persistence Layer
+│   └── aegis_quiz.db         # Auto-generated SQLite Database
 │
-└── templates/
-    ├── base.html            # Base layout template
-    ├── auth/
-    │   └── login.html       # Teacher login page
-    ├── teacher/
-    │   ├── dashboard.html   # Quiz management dashboard
-    │   ├── ai_gen.html      # AI quiz generator interface
-    │   ├── manual_builder.html  # Manual quiz creation form
-    │   ├── monitor.html     # Live exam monitoring console
-    │   └── report.html      # Quiz report & analytics
-    └── student/
-        ├── join.html        # Access code entry page
-        ├── waiting_room.html# Pre-exam waiting lobby
-        ├── quiz.html        # Live exam interface
-        └── results.html     # Post-exam score & review
+├── README.md                 # You are here
+└── .gitignore                # Git exclusions
 ```
 
 ---
 
-## 🔑 API Routes Overview
+## 📡 Real-Time WebSocket Pipeline
 
-| Method | Route                          | Description                      |
-| ------ | ------------------------------ | -------------------------------- |
-| GET    | `/`                            | Login page (redirects if logged in) |
-| POST   | `/login`                       | Teacher authentication           |
-| GET    | `/dashboard`                   | Teacher quiz dashboard           |
-| POST   | `/api/generate`                | AI quiz generation endpoint      |
-| GET/POST | `/teacher/create-manual`     | Manual quiz builder              |
-| GET    | `/teacher/monitor/<quiz_id>`   | Live monitoring page             |
-| GET/POST | `/student/join`              | Student quiz entry               |
-| GET    | `/waiting_room`                | Student waiting lobby            |
-| GET    | `/exam`                        | Live exam page                   |
-| POST   | `/submit_exam`                 | Submit answers & grade           |
-| GET    | `/results`                     | View exam results                |
-| GET    | `/logout`                      | Clear session & logout           |
-
----
-
-## 📡 Real-Time WebSocket Events
-
-| Event                   | Direction         | Description                                |
+| Event                   | Direction         | Functionality                              |
 | ----------------------- | ----------------- | ------------------------------------------ |
-| `join_room`             | Client → Server   | Join a quiz monitoring room                |
-| `verify_student`        | Teacher → Server  | Verify a student's identity                |
-| `teacher_start_exam`    | Teacher → Server  | Start the exam for all students            |
-| `security_violation`    | Student → Server  | Report a tab-switch or copy attempt        |
-| `submit_justification`  | Student → Server  | Send violation justification to teacher    |
-| `teacher_approve_resume`| Teacher → Server  | Allow student to resume after violation    |
-| `status_verified`       | Server → Student  | Confirm student verification               |
-| `force_start`           | Server → Students | Signal all students to begin the exam      |
-| `monitor_update`        | Server → Teacher  | Live violation/status broadcast            |
-| `resume_exam`           | Server → Student  | Allow specific student to continue         |
-
----
-
-## 📝 License
-
-This project is open-source and available under the [MIT License](LICENSE).
+| `join_room`             | Client → Server   | Binds connection to specific quiz room     |
+| `teacher_start_exam`    | Teacher → Server  | Triggers synchronous global exam launch    |
+| `security_violation`    | Student → Server  | Reports focus-loss or keyboard shortcuts   |
+| `force_start`           | Server → Students | Commands all waiting students to redirect  |
+| `monitor_update`        | Server → Teacher  | Updates real-time telemetry dashboard      |
 
 ---
 
 <p align="center">
-  Built with ❤️ by <a href="https://github.com/VrajHasGit">VrajHasGit</a>
+  Built with ❤️ for secure online education.
 </p>

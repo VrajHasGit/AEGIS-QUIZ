@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CLUELY.AI | Teacher Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/awwwards.css') }}">
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <style>
+    /* Additional structural styles for dashboard using awwwards.css variables */
+    .dashboard-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 24px;
+      border-bottom: 1px dotted rgba(0, 71, 255, 0.4);
+      margin-bottom: 64px;
+      width: 100%;
+    }
+    .brand-logo {
+      font-size: 2rem;
+      margin: 0;
+    }
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      margin-bottom: 64px;
+      width: 100%;
+    }
+    .card-title {
+      font-family: var(--font-heading);
+      font-size: 2rem;
+      margin-bottom: 16px;
+      color: var(--text);
+    }
+    .card-desc {
+      font-size: 1rem;
+      color: var(--muted);
+      margin-bottom: 32px;
+      line-height: 1.5;
+    }
+    .form-row {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    .form-row > div {
+      flex: 1;
+    }
+    .quiz-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 24px;
+    }
+    .quiz-table th {
+      text-align: left;
+      font-family: var(--font-body);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      padding: 16px 0;
+      border-bottom: 2px solid var(--border);
+      color: var(--muted);
+      font-size: 0.75rem;
+    }
+    .quiz-table td {
+      padding: 24px 0;
+      border-bottom: 1px dotted var(--border);
+      font-size: 1.1rem;
+      vertical-align: middle;
+    }
+    .quiz-table tr:hover td {
+      background: rgba(0, 71, 255, 0.02);
+    }
+    .action-group {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+    }
+    .badge {
+      font-family: var(--font-body);
+      font-weight: 700;
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      padding: 4px 8px;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      text-transform: uppercase;
+    }
+    @media (max-width: 768px) {
+      .dashboard-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="noise"></div>
+  <div class="ambient-glow"></div>
+
+  <div class="page-container fade-in-up" style="max-width: 1200px; margin: 0 auto; align-items: stretch; justify-content: flex-start; padding-top: 48px;">
+    
+    <nav class="dashboard-nav">
+      <h1 class="display-text brand-logo">CLUELY<span>.AI</span></h1>
+      <div class="nav-actions">
+        <span style="font-family: var(--font-body); font-weight: 700; font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase;">
+          ID: {{ session.get('teacher_name', 'INSTRUCTOR') }}
+        </span>
+        <a href="{{ url_for('logout') }}" class="btn-outline" style="padding: 10px 20px;"><span>LOGOUT</span></a>
+      </div>
+    </nav>
+
+    <div class="dashboard-grid">
+      <!-- AI Builder -->
+      <div class="glass-panel">
+        <h2 class="card-title">GENERATIVE STUDIO</h2>
+        <p class="card-desc">Deploy AI to synthesize a comprehensive assessment instantly. Specify parameters below.</p>
+        
+        <div class="form-row">
+          <div style="flex: 2;">
+            <label class="label-text">Topic Directive</label>
+            <input type="text" id="ai-topic" class="input-field" placeholder="Quantum Mechanics" />
+          </div>
+          <div>
+            <label class="label-text">Items</label>
+            <input type="number" id="ai-count" class="input-field" value="5" min="1" max="20" />
+          </div>
+          <div>
+            <label class="label-text">Min</label>
+            <input type="number" id="ai-duration" class="input-field" value="30" min="1" />
+          </div>
+        </div>
+        
+        <button id="ai-btn" onclick="generateAIQuiz()" class="btn-primary" style="width: 100%;"><span>SYNTHESIZE</span></button>
+      </div>
+
+      <!-- Manual Builder -->
+      <div class="glass-panel">
+        <h2 class="card-title">MANUAL OVERRIDE</h2>
+        <p class="card-desc">Construct an assessment manually with absolute structural control. Bypass generative protocols.</p>
+        <div style="margin-top: 64px;">
+          <a href="/teacher/create-manual" class="btn-outline" style="width: 100%;"><span>AUTHORIZE MANUAL BUILD</span></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="glass-panel">
+      <h2 class="card-title" style="margin-bottom: 8px;">ACTIVE DEPLOYMENTS</h2>
+      <p class="card-desc" style="margin-bottom: 0;">Total records: {{ quizzes | length }}</p>
+      
+      <table class="quiz-table">
+        <thead>
+          <tr>
+            <th>Designation</th>
+            <th>Access Hash</th>
+            <th>Subjects</th>
+            <th style="text-align: right;">Operations</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if quizzes %}
+            {% for quiz in quizzes %}
+            <tr id="quiz-row-{{ quiz.id }}">
+              <td style="font-family: var(--font-heading); font-weight: 700;">{{ quiz.title }}</td>
+              <td><span style="font-family: monospace; color: var(--accent); font-weight: bold; letter-spacing: 2px;">{{ quiz.access_code }}</span></td>
+              <td><span class="badge">{{ quiz.student_count }} SUBJECTS</span></td>
+              <td>
+                <div class="action-group">
+                  <button onclick="startExam('{{ quiz.id }}')" class="btn-outline" style="padding: 8px 16px; border-color: var(--success); color: var(--success);"><span>LAUNCH</span></button>
+                  <a href="/teacher/monitor/{{ quiz.id }}" class="btn-outline" style="padding: 8px 16px;"><span>MONITOR</span></a>
+                  <a href="/teacher/review/{{ quiz.id }}" class="btn-outline" style="padding: 8px 16px;"><span>REVIEW</span></a>
+                  <span id="delete-wrap-{{ quiz.id }}">
+                    <button onclick="confirmDelete('{{ quiz.id }}')" class="btn-outline" style="padding: 8px 16px; border-color: var(--danger); color: var(--danger);"><span>PURGE</span></button>
+                  </span>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          {% else %}
+          <tr>
+            <td colspan="4" style="text-align: center; color: var(--muted); padding: 64px 0; font-family: var(--font-heading); font-style: italic;">
+              No active deployments found.
+            </td>
+          </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <script>
+    const socket = io();
+
+    async function generateAIQuiz() {
+      const topic = document.getElementById("ai-topic").value;
+      const count = document.getElementById("ai-count").value;
+      const duration = document.getElementById("ai-duration").value || 30;
+      const btn = document.getElementById("ai-btn");
+      
+      if (!topic) { alert("Missing Topic Directive."); return; }
+      
+      btn.innerHTML = `<span>PROCESSING...</span>`;
+      btn.disabled = true;
+      
+      try {
+        const res = await fetch("/api/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ topic, num_questions: count, duration: parseInt(duration) }),
+        });
+        const result = await res.json();
+        if (res.ok && result.status === "success") {
+          alert(`Synthesis Complete. Access Hash: ${result.code}`);
+          location.reload();
+        } else {
+          alert("Error: " + (result.message || "Unknown error"));
+        }
+      } catch {
+        alert("Connection Error.");
+      } finally {
+        btn.innerHTML = `<span>SYNTHESIZE</span>`;
+        btn.disabled = false;
+      }
+    }
+
+    function confirmDelete(quizId) {
+      const wrap = document.getElementById(`delete-wrap-${quizId}`);
+      wrap.innerHTML = `
+        <button onclick="deleteQuiz('${quizId}')" class="btn-primary" style="padding: 8px 16px; background: var(--danger); border-color: var(--danger); color: white;"><span>CONFIRM</span></button>
+      `;
+    }
+
+    async function deleteQuiz(quizId) {
+      try {
+        const res = await fetch(`/api/quiz/${quizId}`, { method: 'DELETE' });
+        const result = await res.json();
+        if (res.ok && result.status === 'success') {
+          const row = document.getElementById(`quiz-row-${quizId}`);
+          if (row) row.remove();
+        } else {
+          alert('Failed to purge deployment.');
+        }
+      } catch {
+        alert('Connection Error.');
+      }
+    }
+
+    function startExam(quizId) {
+      socket.emit("teacher_start_exam", { quiz_id: quizId });
+      alert("Deployment Launched. Subjects may now enter.");
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CLUELY.AI | Intelligence Review</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/awwwards.css') }}">
+  <style>
+    .review-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 24px;
+      border-bottom: 1px dotted rgba(0, 71, 255, 0.4);
+      margin-bottom: 48px;
+      width: 100%;
+    }
+    .brand-logo { font-size: 1.5rem; margin: 0; }
+    .nav-actions { display: flex; align-items: center; gap: 24px; }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 32px;
+      margin-bottom: 48px;
+      width: 100%;
+    }
+    .stat-card {
+      text-align: center;
+      padding: 32px;
+      border: 1px solid var(--border);
+      background: var(--bg-secondary);
+    }
+    .stat-value {
+      font-family: var(--font-display);
+      font-size: 4rem;
+      color: var(--text);
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+    .stat-label {
+      font-family: var(--font-body);
+      font-weight: 700;
+      font-size: 0.75rem;
+      letter-spacing: 0.15em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .subject-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      margin-bottom: 24px;
+      position: relative;
+    }
+    .subject-header {
+      padding: 24px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      background: var(--bg);
+      border-bottom: 1px solid transparent;
+      transition: all 0.3s;
+    }
+    .subject-header:hover {
+      background: var(--bg-secondary);
+    }
+    .subject-card.expanded .subject-header {
+      border-bottom: 1px dotted var(--border);
+    }
+
+    .subject-name {
+      font-family: var(--font-heading);
+      font-size: 1.5rem;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+    .subject-meta {
+      font-family: var(--font-body);
+      font-size: 0.8rem;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+    .score-badge {
+      font-family: var(--font-body);
+      font-weight: 700;
+      font-size: 1.25rem;
+      padding: 8px 16px;
+      border: 1px solid var(--text);
+      color: var(--text);
+    }
+    .score-badge.high { border-color: var(--success); color: var(--success); }
+    .score-badge.low { border-color: var(--danger); color: var(--danger); }
+
+    .answer-sheet {
+      display: none;
+      padding: 32px;
+    }
+    .subject-card.expanded .answer-sheet {
+      display: block;
+    }
+
+    .q-block {
+      border: 1px solid var(--border);
+      padding: 24px;
+      margin-bottom: 16px;
+      background: var(--bg);
+    }
+    .q-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .q-num {
+      font-family: var(--font-body);
+      font-weight: 700;
+      font-size: 0.8rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .verdict {
+      font-family: var(--font-body);
+      font-weight: 700;
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 4px 8px;
+    }
+    .verdict.correct { color: var(--success); border: 1px solid var(--success); }
+    .verdict.wrong { color: var(--danger); border: 1px solid var(--danger); }
+    .verdict.skip { color: var(--muted); border: 1px solid var(--muted); }
+
+    .q-text {
+      font-family: var(--font-heading);
+      font-size: 1.1rem;
+      margin-bottom: 24px;
+    }
+
+    .opts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .opt-pill {
+      padding: 16px;
+      border: 1px solid var(--border);
+      background: var(--bg-secondary);
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .opt-letter {
+      font-weight: 700;
+      color: var(--accent);
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .opt-pill.chosen-correct { border-color: var(--success); background: var(--bg); color: var(--success); }
+    .opt-pill.chosen-wrong { border-color: var(--danger); background: var(--bg); color: var(--danger); }
+    .opt-pill.correct-highlight { border: 1px dotted var(--success); color: var(--success); }
+
+  </style>
+</head>
+<body>
+  <div class="noise"></div>
+  <div class="ambient-glow"></div>
+
+  <div class="page-container fade-in-up" style="max-width: 1200px; margin: 0 auto; align-items: stretch; justify-content: flex-start; padding-top: 48px;">
+    
+    <nav class="review-nav">
+      <div style="display: flex; align-items: center; gap: 32px;">
+        <h1 class="display-text brand-logo">CLUELY<span>.AI</span></h1>
+        <div style="font-family: var(--font-body); font-weight: 700; font-size: 0.8rem; letter-spacing: 0.1em;">{{ quiz.title }} &mdash; <span>{{ quiz.access_code }}</span></div>
+      </div>
+      <div class="nav-actions">
+        <a href="/dashboard" class="btn-outline" style="padding: 10px 20px;"><span>RETURN</span></a>
+      </div>
+    </nav>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value">{{ students|length }}</div>
+        <div class="stat-label">SUBJECTS</div>
+      </div>
+      <div class="stat-card" style="border-color: var(--success);">
+        <div class="stat-value" style="color: var(--success);">{{ total_completed }}</div>
+        <div class="stat-label" style="color: var(--success);">FINALIZED</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">{{ avg_score }}%</div>
+        <div class="stat-label">MEAN SCORE</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">{{ questions|length }}</div>
+        <div class="stat-label">ITEMS</div>
+      </div>
+    </div>
+
+    <div>
+      <h2 style="font-family: var(--font-heading); font-size: 1.5rem; margin-bottom: 32px;">SUBJECT DOSSIERS</h2>
+      
+      {% if students %}
+        {% for s in students %}
+        <div class="subject-card" id="card-{{ s.id }}">
+          <div class="subject-header" onclick="toggleCard('card-{{ s.id }}')">
+            <div>
+              <div class="subject-name">{{ s.student_name }}</div>
+              <div class="subject-meta">{{ s.status }} {% if s.violation_count > 0 %}| {{ s.violation_count }} BREACHES{% endif %}</div>
+            </div>
+            <div>
+              {% if s.status == 'completed' and s.score is not none %}
+                <div class="score-badge {% if s.score >= 75 %}high{% elif s.score < 50 %}low{% endif %}">
+                  {{ s.score }}%
+                </div>
+              {% else %}
+                <div class="score-badge" style="color: var(--muted); border-color: var(--muted);">PENDING</div>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="answer-sheet">
+            {% if s.parsed_responses %}
+              {% for q in questions %}
+                {% set resp = s.response_map.get(q.id|string) %}
+                {% set is_correct = resp and resp.is_correct %}
+                {% set is_answered = resp and resp.student_choice %}
+                <div class="q-block">
+                  <div class="q-header">
+                    <span class="q-num">ITEM {{ loop.index }}</span>
+                    {% if is_correct %}
+                      <span class="verdict correct">CORRECT</span>
+                    {% elif is_answered %}
+                      <span class="verdict wrong">INCORRECT</span>
+                    {% else %}
+                      <span class="verdict skip">OMITTED</span>
+                    {% endif %}
+                  </div>
+                  <div class="q-text">{{ q.question_text }}</div>
+                  <div class="opts-grid">
+                    {% for letter, text in [('A', q.option_a), ('B', q.option_b), ('C', q.option_c), ('D', q.option_d)] %}
+                      {% set is_chosen = resp and resp.student_choice == letter %}
+                      {% set is_correct_ans = q.correct_answer == letter %}
+                      <div class="opt-pill
+                        {% if is_chosen and is_correct %}chosen-correct
+                        {% elif is_chosen and not is_correct %}chosen-wrong
+                        {% elif is_correct_ans and is_answered and not is_correct %}correct-highlight
+                        {% endif %}">
+                        <span class="opt-letter">{{ letter }}</span>
+                        {{ text }}
+                      </div>
+                    {% endfor %}
+                  </div>
+                </div>
+              {% endfor %}
+            {% else %}
+              <div style="text-align: center; color: var(--muted); font-family: var(--font-heading); font-style: italic; padding: 32px 0;">
+                No telemetry available for this subject.
+              </div>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div style="text-align: center; color: var(--muted); font-family: var(--font-heading); font-style: italic; padding: 64px 0;">
+          No subject dossiers available.
+        </div>
+      {% endif %}
+    </div>
+
+  </div>
+
+  <script>
+    function toggleCard(id) {
+      document.getElementById(id).classList.toggle('expanded');
+    }
+  </script>
+</body>
+</html>
